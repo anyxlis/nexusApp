@@ -1,14 +1,18 @@
 <!DOCTYPE html>
 <html lang="es" ng-app="nexusApp">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Nexus — Agenda & Finanzas</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet" />
   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
   <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body ng-controller="MainCtrl">
 
   <!-- SPLASH -->
@@ -25,44 +29,46 @@
         <span class="brand-name">Nexus</span>
       </div>
       <p class="auth-tagline">Tu agenda y finanzas, en un solo lugar.</p>
-
       <div class="auth-tabs">
-        <button ng-class="{'active': authMode==='login'}" ng-click="authMode='login'; authError=''">Iniciar sesión</button>
-        <button ng-class="{'active': authMode==='register'}" ng-click="authMode='register'; authError=''">Crear cuenta</button>
+        <button ng-class="{'active': authMode==='login'}" ng-click="authMode='login'; authError=''">Iniciar
+          sesión</button>
+        <button ng-class="{'active': authMode==='register'}" ng-click="authMode='register'; authError=''">Crear
+          cuenta</button>
       </div>
-
       <div ng-show="authMode==='login'" class="auth-form">
         <div class="form-group">
           <label>Usuario</label>
-          <input type="text" ng-model="authData.username" placeholder="tu_usuario" ng-keypress="authEnter($event,'login')" />
+          <input type="text" ng-model="authData.username" placeholder="tu_usuario"
+            ng-keypress="authEnter($event,'login')" />
         </div>
         <div class="form-group">
           <label>Contraseña</label>
-          <input type="password" ng-model="authData.password" placeholder="••••••••" ng-keypress="authEnter($event,'login')" />
+          <input type="password" ng-model="authData.password" placeholder="••••••••"
+            ng-keypress="authEnter($event,'login')" />
         </div>
         <p class="auth-error" ng-show="authError">{{authError}}</p>
-        <button class="btn-primary full" ng-click="login()" ng-disabled="authLoading">
-          {{authLoading ? 'Cargando…' : 'Entrar'}}
-        </button>
+        <button class="btn-primary full" ng-click="login()" ng-disabled="authLoading">{{authLoading ? 'Cargando…' :
+          'Entrar'}}</button>
       </div>
-
       <div ng-show="authMode==='register'" class="auth-form">
         <div class="form-group">
           <label>Nombre completo</label>
-          <input type="text" ng-model="authData.nombre" placeholder="Tu nombre" ng-keypress="authEnter($event,'register')" />
+          <input type="text" ng-model="authData.nombre" placeholder="Tu nombre"
+            ng-keypress="authEnter($event,'register')" />
         </div>
         <div class="form-group">
           <label>Usuario</label>
-          <input type="text" ng-model="authData.username" placeholder="elige_un_usuario" ng-keypress="authEnter($event,'register')" />
+          <input type="text" ng-model="authData.username" placeholder="elige_un_usuario"
+            ng-keypress="authEnter($event,'register')" />
         </div>
         <div class="form-group">
           <label>Contraseña</label>
-          <input type="password" ng-model="authData.password" placeholder="Mínimo 6 caracteres" ng-keypress="authEnter($event,'register')" />
+          <input type="password" ng-model="authData.password" placeholder="Mínimo 6 caracteres"
+            ng-keypress="authEnter($event,'register')" />
         </div>
         <p class="auth-error" ng-show="authError">{{authError}}</p>
-        <button class="btn-primary full" ng-click="register()" ng-disabled="authLoading">
-          {{authLoading ? 'Creando…' : 'Crear cuenta'}}
-        </button>
+        <button class="btn-primary full" ng-click="register()" ng-disabled="authLoading">{{authLoading ? 'Creando…' :
+          'Crear cuenta'}}</button>
       </div>
     </div>
   </div>
@@ -75,60 +81,213 @@
         <div class="brand-icon">N</div>
         <span class="brand-name">Nexus</span>
       </div>
-
       <nav class="nav">
+        <button class="nav-item" ng-class="{'active': activeView==='dashboard'}" ng-click="setView('dashboard')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="3" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="3" width="7" height="7" rx="1" />
+            <rect x="3" y="14" width="7" height="7" rx="1" />
+            <rect x="14" y="14" width="7" height="7" rx="1" />
+          </svg>
+          <span>Dashboard</span>
+        </button>
         <button class="nav-item" ng-class="{'active': activeView==='agenda'}" ng-click="setView('agenda')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="3" y="4" width="18" height="18" rx="2" />
+            <path d="M16 2v4M8 2v4M3 10h18" />
+          </svg>
           <span>Agenda</span>
         </button>
         <button class="nav-item" ng-class="{'active': activeView==='semana'}" ng-click="setView('semana')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M12 2v4M16 2v4"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="3" y="4" width="18" height="18" rx="2" />
+            <path d="M3 10h18M8 2v4M12 2v4M16 2v4" />
+          </svg>
           <span>Semana</span>
         </button>
         <button class="nav-item" ng-class="{'active': activeView==='tareas'}" ng-click="setView('tareas')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M9 11l3 3L22 4" />
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+          </svg>
           <span>Tareas</span>
         </button>
         <button class="nav-item" ng-class="{'active': activeView==='finanzas'}" ng-click="setView('finanzas')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 12h8M12 8v8"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M8 12h8M12 8v8" />
+          </svg>
           <span>Finanzas</span>
         </button>
+        <div class="nav-sep"></div>
+        <!-- ÚNICO ítem para todo el negocio -->
+        <button class="nav-item" ng-class="{'active': activeView==='negocio'}" ng-click="setView('negocio')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+            <line x1="7" y1="7" x2="7.01" y2="7" />
+          </svg>
+          <span>Fragancias</span>
+        </button>
+        <button class="nav-item" ng-class="{'active': activeView==='mayoristas'}" ng-click="setView('mayoristas')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+          <span>Mayoristas</span>
+        </button>
       </nav>
-
       <div class="sidebar-bottom">
         <div class="user-pill">
-          <div class="user-avatar">{{currentUser && currentUser.nombre ? currentUser.nombre[0].toUpperCase() : 'U'}}</div>
+          <div class="user-avatar">{{currentUser && currentUser.nombre ? currentUser.nombre[0].toUpperCase() : 'U'}}
+          </div>
           <div class="user-info">
             <span class="user-name">{{currentUser.nombre}}</span>
             <span class="user-handle">@{{currentUser.username}}</span>
           </div>
         </div>
         <button class="btn-logout" ng-click="logout()" title="Cerrar sesión">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+          </svg>
         </button>
       </div>
     </aside>
 
     <main class="main">
-      <!-- Toast -->
       <div class="toast" ng-show="toast.show" ng-class="'toast-'+toast.type">{{toast.msg}}</div>
 
-      <!-- AGENDA DIARIA -->
+      <!-- DASHBOARD -->
+      <section ng-show="activeView==='dashboard'" class="view-section">
+        <header class="view-header">
+          <div>
+            <h1>Hola, {{currentUser.nombre.split(' ')[0]}} 👋</h1>
+            <p class="subtitle">{{today | date:'EEEE, d'}} de {{today | date:'MMMM yyyy'}}</p>
+          </div>
+        </header>
+        <div class="dash-quote">
+          <span class="dash-quote-icon">💡</span>
+          <p>{{motivationalQuote}}</p>
+        </div>
+        <div class="dash-stats">
+          <div class="dash-stat-card">
+            <div class="dsc-icon" style="color:var(--accent2)"><svg viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="1.8" width="22" height="22">
+                <rect x="3" y="4" width="18" height="18" rx="2" />
+                <path d="M16 2v4M8 2v4M3 10h18" />
+              </svg></div>
+            <div>
+              <p class="dsc-num">{{eventsToday()}}</p>
+              <p class="dsc-lbl">Eventos hoy</p>
+            </div>
+          </div>
+          <div class="dash-stat-card">
+            <div class="dsc-icon" style="color:var(--amber)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.8" width="22" height="22">
+                <path d="M9 11l3 3L22 4" />
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+              </svg></div>
+            <div>
+              <p class="dsc-num">{{pendingTasks()}}</p>
+              <p class="dsc-lbl">Tareas pendientes</p>
+            </div>
+          </div>
+          <div class="dash-stat-card">
+            <div class="dsc-icon" style="color:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.8" width="22" height="22">
+                <path d="M12 20V4m-7 7l7-7 7 7" />
+              </svg></div>
+            <div>
+              <p class="dsc-num">${{totalIncome() | number}}</p>
+              <p class="dsc-lbl">Ingresos del mes</p>
+            </div>
+          </div>
+          <div class="dash-stat-card" ng-class="balance() < 0 ? 'dsc-danger' : ''">
+            <div class="dsc-icon" ng-style="{'color': balance() >= 0 ? 'var(--blue)' : 'var(--red)'}"><svg
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="22" height="22">
+                <rect x="2" y="7" width="20" height="14" rx="2" />
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+              </svg></div>
+            <div>
+              <p class="dsc-num" ng-style="{'color': balance() >= 0 ? 'var(--blue)' : 'var(--red)'}">${{balance() |
+                number}}</p>
+              <p class="dsc-lbl">Balance neto</p>
+            </div>
+          </div>
+        </div>
+        <div class="dash-cols">
+          <div class="dash-panel">
+            <div class="dash-panel-header">
+              <span>Eventos de hoy</span>
+              <button class="btn-ghost" style="font-size:.75rem;padding:.3rem .7rem" ng-click="setView('agenda')">Ver
+                agenda →</button>
+            </div>
+            <div class="dash-empty" ng-if="eventsToday() === 0">Sin eventos hoy ✨</div>
+            <div class="dash-ev-item" ng-repeat="ev in eventsForDay(today) | orderBy:'hora_inicio' | limitTo:5"
+              ng-class="'cat-'+ev.categoria">
+              <span class="dei-dot"></span>
+              <div>
+                <p class="dei-title">{{ev.titulo}}</p>
+                <p class="dei-time">{{formatHour(ev.hora_inicio)}}</p>
+              </div>
+            </div>
+          </div>
+          <div class="dash-panel">
+            <div class="dash-panel-header">
+              <span>Tareas urgentes</span>
+              <button class="btn-ghost" style="font-size:.75rem;padding:.3rem .7rem" ng-click="setView('tareas')">Ver
+                todas →</button>
+            </div>
+            <div class="dash-empty" ng-if="urgentTasks().length === 0">Sin tareas urgentes 🎉</div>
+            <div class="dash-task-item" ng-repeat="t in urgentTasks() | limitTo:5">
+              <button class="task-check" ng-click="toggleTask(t)" style="flex-shrink:0"><svg viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11">
+                  <path d="M20 6L9 17l-5-5" />
+                </svg></button>
+              <span class="dash-task-text" ng-class="{'done-txt': t.completada}">{{t.texto}}</span>
+              <span class="task-pri pri-{{t.prioridad}}">{{t.prioridad}}</span>
+            </div>
+          </div>
+        </div>
+        <div class="dash-panel dash-finance-strip">
+          <div class="dash-panel-header">
+            <span>Resumen financiero del mes</span>
+            <button class="btn-ghost" style="font-size:.75rem;padding:.3rem .7rem" ng-click="setView('finanzas')">Ver
+              finanzas →</button>
+          </div>
+          <div class="dash-finance-grid">
+            <div class="dfg-item inc"><span class="dfg-lbl">Ingresos</span><span class="dfg-val">${{totalIncome() |
+                number}}</span></div>
+            <div class="dfg-item exp"><span class="dfg-lbl">Gastos</span><span class="dfg-val">${{totalExpense() |
+                number}}</span></div>
+            <div class="dfg-item" ng-class="balance()>=0?'bal':'neg'"><span class="dfg-lbl">Balance</span><span
+                class="dfg-val">${{balance() | number}}</span></div>
+            <div class="dfg-item sav"><span class="dfg-lbl">Ahorro</span><span class="dfg-val">{{savingsRate()}}%</span>
+            </div>
+          </div>
+          <div class="bt-bar" style="margin-top:.85rem" ng-if="totalIncome()>0">
+            <div class="bt-fill" ng-style="{'width':spentPct()+'%'}"
+              ng-class="{'bt-warn':spentPct()>75,'bt-danger':spentPct()>100}"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- AGENDA -->
       <section ng-show="activeView==='agenda'" class="view-section">
         <header class="view-header">
           <div>
             <h1>Agenda</h1>
-            <p class="subtitle">{{selectedDate | date:'EEEE, d \'de\' MMMM yyyy'}}</p>
+            <p class="subtitle">{{selectedDate | date:'EEEE, d'}} de {{selectedDate | date:'MMMM yyyy'}}</p>
           </div>
           <button class="btn-primary" ng-click="openEventModal(null)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="15" height="15"><path d="M12 5v14M5 12h14"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="15" height="15">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
             Nuevo evento
           </button>
         </header>
-
         <div class="week-strip">
-          <button class="week-day"
-            ng-repeat="d in weekDays"
+          <button class="week-day" ng-repeat="d in weekDays"
             ng-class="{'selected': isSameDay(d.date, selectedDate), 'today': isSameDay(d.date, today)}"
             ng-click="selectDate(d.date)">
             <span class="wd-name">{{d.date | date:'EEE'}}</span>
@@ -136,19 +295,20 @@
             <span class="wd-dot" ng-if="hasEventsOn(d.date)"></span>
           </button>
         </div>
-
         <div class="loading-row" ng-show="loadingEvents">
           <div class="spinner"></div><span>Cargando…</span>
         </div>
-
         <div class="timeline" ng-show="!loadingEvents">
           <div class="timeline-empty" ng-if="eventsForDay(selectedDate).length === 0">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" width="40" height="40"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" width="40" height="40">
+              <rect x="3" y="4" width="18" height="18" rx="2" />
+              <path d="M16 2v4M8 2v4M3 10h18" />
+            </svg>
             <p>Sin eventos para este día</p>
             <button class="btn-ghost" ng-click="openEventModal(null)">+ Añadir evento</button>
           </div>
-
-          <div class="event-card" ng-repeat="ev in eventsForDay(selectedDate) | orderBy:'hora_inicio'" ng-class="'cat-'+ev.categoria" ng-click="openEventModal(ev)">
+          <div class="event-card" ng-repeat="ev in eventsForDay(selectedDate) | orderBy:'hora_inicio'"
+            ng-class="'cat-'+ev.categoria" ng-click="openEventModal(ev)">
             <div class="ev-time">
               <span class="ev-hour">{{formatHour(ev.hora_inicio)}}</span>
               <span class="ev-end" ng-if="ev.hora_fin">{{formatHour(ev.hora_fin)}}</span>
@@ -159,14 +319,15 @@
               <p class="ev-desc" ng-if="ev.descripcion">{{ev.descripcion}}</p>
               <span class="tag">{{categories[ev.categoria] ? categories[ev.categoria].label : ev.categoria}}</span>
             </div>
-            <button class="ev-delete" ng-click="deleteEvent(ev, $event)" title="Eliminar">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M18 6L6 18M6 6l12 12"/></svg>
-            </button>
+            <button class="ev-delete" ng-click="deleteEvent(ev, $event)"><svg viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" width="13" height="13">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg></button>
           </div>
         </div>
       </section>
 
-      <!-- VISTA SEMANAL -->
+      <!-- SEMANA -->
       <section ng-show="activeView==='semana'" class="view-section">
         <header class="view-header">
           <div>
@@ -180,39 +341,31 @@
             <button class="btn-primary" ng-click="openEventModal(null)">+ Evento</button>
           </div>
         </header>
-
-        <!-- Leyenda -->
         <div class="cat-legend">
           <span class="legend-item" ng-repeat="(k,v) in categories">
             <span class="legend-dot" ng-style="{'background': v.color}"></span>{{v.label}}
           </span>
         </div>
-
         <div class="loading-row" ng-show="loadingEvents">
           <div class="spinner"></div><span>Cargando…</span>
         </div>
-
         <div class="week-grid-wrap" ng-show="!loadingEvents">
           <div class="week-grid">
-            <!-- Horas -->
             <div class="wg-hours">
               <div class="wg-corner"></div>
-              <div class="wg-hour-cell" ng-repeat="h in gridHours">{{h | number:0}}:00</div>
+              <div class="wg-hour-cell" ng-repeat="h in gridHours">{{h}}:00</div>
             </div>
-            <!-- Días -->
             <div class="wg-day-col" ng-repeat="d in weekDays" ng-class="{'wg-today': isSameDay(d.date, today)}">
               <div class="wg-day-header" ng-click="selectDate(d.date); setView('agenda')">
                 <span class="wgdh-name">{{d.date | date:'EEE'}}</span>
                 <span class="wgdh-num" ng-class="{'wgdh-today': isSameDay(d.date, today)}">{{d.date | date:'d'}}</span>
               </div>
-              <div class="wg-body" ng-style="{'height': gridHours.length * cellH + 'px'}" ng-click="clickCell(d.date, $event)">
+              <div class="wg-body" ng-style="{'height': gridHours.length * cellH + 'px'}"
+                ng-click="clickCell(d.date, $event)">
                 <div class="wg-hline" ng-repeat="h in gridHours" ng-style="{'top': $index * cellH + 'px'}"></div>
-                <div class="wg-block"
-                     ng-repeat="ev in eventsForDay(d.date)"
-                     ng-style="blockStyle(ev)"
-                     ng-class="'cat-block-'+ev.categoria"
-                     ng-click="openEventModal(ev); $event.stopPropagation()"
-                     title="{{ev.titulo}} {{formatHour(ev.hora_inicio)}}">
+                <div class="wg-block" ng-repeat="ev in eventsForDay(d.date)" ng-style="blockStyle(ev)"
+                  ng-class="'cat-block-'+ev.categoria" ng-click="openEventModal(ev); $event.stopPropagation()"
+                  title="{{ev.titulo}}">
                   <span class="wg-block-title">{{ev.titulo}}</span>
                   <span class="wg-block-time">{{formatHour(ev.hora_inicio)}}</span>
                 </div>
@@ -230,36 +383,43 @@
             <p class="subtitle">{{pendingTasks()}} pendientes · {{doneTasks()}} completadas</p>
           </div>
         </header>
-
         <div class="loading-row" ng-show="loadingTasks">
           <div class="spinner"></div><span>Cargando tareas…</span>
         </div>
-
         <div ng-show="!loadingTasks">
           <div class="filter-tabs" style="margin-bottom:1.2rem">
             <button ng-class="{'active': taskFilter==='todas'}" ng-click="taskFilter='todas'">Todas</button>
-            <button ng-class="{'active': taskFilter==='pendientes'}" ng-click="taskFilter='pendientes'">Pendientes</button>
+            <button ng-class="{'active': taskFilter==='pendientes'}"
+              ng-click="taskFilter='pendientes'">Pendientes</button>
             <button ng-class="{'active': taskFilter==='hechas'}" ng-click="taskFilter='hechas'">Completadas</button>
           </div>
-
           <div class="task-list">
             <div class="task-empty" ng-if="filteredTasks().length === 0">
               <p>Sin tareas aquí todavía.</p>
             </div>
-            <div class="task-item" ng-repeat="t in filteredTasks() | orderBy:['-completada','creado_en']" ng-class="{'done': t.completada}">
-              <button class="task-check" ng-click="toggleTask(t)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><path d="M20 6L9 17l-5-5"/></svg>
-              </button>
+            <div class="task-item" ng-repeat="t in filteredTasks() | orderBy:['-completada','creado_en']"
+              ng-class="{'done': t.completada}">
+              <button class="task-check" ng-click="toggleTask(t)"><svg viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5" width="12" height="12">
+                  <path d="M20 6L9 17l-5-5" />
+                </svg></button>
               <span class="task-text">{{t.texto}}</span>
               <span class="task-date" ng-if="t.fecha_limite">{{t.fecha_limite | date:'d MMM'}}</span>
               <span class="task-pri" ng-class="'pri-'+t.prioridad">{{t.prioridad}}</span>
-              <button class="task-del" ng-click="deleteTask(t)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
-              </button>
+              <button class="task-del" ng-click="openTaskModal(t)" title="Editar"
+                style="opacity:1;color:var(--text3)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2" width="13" height="13">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg></button>
+              <button class="task-del" ng-click="deleteTask(t)" title="Eliminar"><svg viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" width="13" height="13">
+                  <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+                </svg></button>
             </div>
-
             <div class="add-task-row">
-              <input type="text" placeholder="Nueva tarea…" ng-model="newTask.texto" ng-keypress="addTaskEnter($event)" class="task-input" />
+              <input type="text" placeholder="Nueva tarea…" ng-model="newTask.texto" ng-keypress="addTaskEnter($event)"
+                class="task-input" />
               <select ng-model="newTask.prioridad" class="task-select">
                 <option value="alta">Alta</option>
                 <option value="media">Media</option>
@@ -284,54 +444,70 @@
             <button class="btn-expense" ng-click="openTransModal('gasto')">+ Gasto</button>
           </div>
         </header>
-
         <div class="loading-row" ng-show="loadingTrans">
           <div class="spinner"></div><span>Cargando…</span>
         </div>
-
         <div ng-show="!loadingTrans">
           <div class="kpi-row">
             <div class="kpi-card kpi-income">
-              <span class="kpi-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="20" height="20"><path d="M12 20V4m-7 7l7-7 7 7"/></svg>
-              </span>
-              <div><p class="kpi-label">Ingresos</p><p class="kpi-value">${{totalIncome() | number}}</p></div>
+              <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                  width="20" height="20">
+                  <path d="M12 20V4m-7 7l7-7 7 7" />
+                </svg></span>
+              <div>
+                <p class="kpi-label">Ingresos</p>
+                <p class="kpi-value">${{totalIncome() | number}}</p>
+              </div>
             </div>
             <div class="kpi-card kpi-expense">
-              <span class="kpi-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="20" height="20"><path d="M12 4v16m7-7l-7 7-7-7"/></svg>
-              </span>
-              <div><p class="kpi-label">Gastos</p><p class="kpi-value">${{totalExpense() | number}}</p></div>
+              <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                  width="20" height="20">
+                  <path d="M12 4v16m7-7l-7 7-7-7" />
+                </svg></span>
+              <div>
+                <p class="kpi-label">Gastos</p>
+                <p class="kpi-value">${{totalExpense() | number}}</p>
+              </div>
             </div>
             <div class="kpi-card" ng-class="balance()>=0 ? 'kpi-balance' : 'kpi-neg'">
-              <span class="kpi-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="20" height="20"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-              </span>
-              <div><p class="kpi-label">Balance</p><p class="kpi-value">${{balance() | number}}</p></div>
+              <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                  width="20" height="20">
+                  <rect x="2" y="7" width="20" height="14" rx="2" />
+                  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                </svg></span>
+              <div>
+                <p class="kpi-label">Balance</p>
+                <p class="kpi-value">${{balance() | number}}</p>
+              </div>
             </div>
             <div class="kpi-card kpi-savings">
-              <span class="kpi-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="20" height="20"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 11 5.5c0 1 .23 2.23 1 3.5"/><path d="M5.88 15l-1.76-5.58A2 2 0 0 1 6 7h12a2 2 0 0 1 1.88 2.42L18 15"/><path d="M12 15v7m-3-3h6"/></svg>
-              </span>
-              <div><p class="kpi-label">Tasa ahorro</p><p class="kpi-value">{{savingsRate()}}%</p></div>
+              <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                  width="20" height="20">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01" />
+                </svg></span>
+              <div>
+                <p class="kpi-label">Tasa ahorro</p>
+                <p class="kpi-value">{{savingsRate()}}%</p>
+              </div>
             </div>
           </div>
-
           <div class="budget-track" ng-if="totalIncome()>0">
             <div class="bt-label"><span>Gasto vs ingreso</span><span>{{spentPct()}}%</span></div>
             <div class="bt-bar">
-              <div class="bt-fill" ng-style="{'width': spentPct()+'%'}" ng-class="{'bt-warn':spentPct()>75,'bt-danger':spentPct()>100}"></div>
+              <div class="bt-fill" ng-style="{'width': spentPct()+'%'}"
+                ng-class="{'bt-warn':spentPct()>75,'bt-danger':spentPct()>100}"></div>
             </div>
           </div>
-
           <div class="filter-tabs">
             <button ng-class="{'active': transFilter==='todos'}" ng-click="transFilter='todos'">Todos</button>
             <button ng-class="{'active': transFilter==='ingreso'}" ng-click="transFilter='ingreso'">Ingresos</button>
             <button ng-class="{'active': transFilter==='gasto'}" ng-click="transFilter='gasto'">Gastos</button>
           </div>
-
           <div class="trans-list">
-            <div class="trans-empty" ng-if="filteredTrans().length===0"><p>Sin movimientos registrados</p></div>
+            <div class="trans-empty" ng-if="filteredTrans().length===0">
+              <p>Sin movimientos registrados</p>
+            </div>
             <div class="trans-item" ng-repeat="t in filteredTrans() | orderBy:'-fecha'">
               <div class="trans-ico">{{categoryIcon(t.categoria)}}</div>
               <div class="trans-info">
@@ -340,14 +516,19 @@
                 <span class="trans-date">· {{t.fecha | date:'dd MMM yyyy'}}</span>
               </div>
               <div class="trans-amount" ng-class="t.tipo==='ingreso'?'amt-inc':'amt-exp'">
-                {{t.tipo==='ingreso'?'+':'-'}}${{t.monto | number}}
-              </div>
-              <button class="trans-del" ng-click="deleteTrans(t)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
-              </button>
+                {{t.tipo==='ingreso'?'+':'-'}}${{t.monto | number}}</div>
+              <button class="trans-del" ng-click="openTransModal(t.tipo, t)" title="Editar"
+                style="opacity:1;color:var(--text3)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2" width="14" height="14">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg></button>
+              <button class="trans-del" ng-click="deleteTrans(t)" title="Eliminar"><svg viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+                </svg></button>
             </div>
           </div>
-
           <div class="section-divider"><span>Gastos por categoría</span></div>
           <div class="cat-breakdown">
             <div class="cat-empty" ng-if="totalExpense()===0">Sin gastos aún</div>
@@ -361,6 +542,517 @@
           </div>
         </div>
       </section>
+
+      <!-- ══════════════════════════════════════════════════════
+           FRAGANCIAS — sección unificada con Producción dentro
+           ══════════════════════════════════════════════════════ -->
+      <section ng-show="activeView==='negocio'" class="view-section">
+        <header class="view-header">
+          <div>
+            <h1>🌸 Mi Negocio</h1>
+            <p class="subtitle">Fragancias, producción y ventas — COP</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn-ghost" ng-click="negTab='resumen'"
+              ng-class="{'btn-tab-active': negTab==='resumen'}">Resumen</button>
+            <button class="btn-ghost" ng-click="negTab='ventas'"
+              ng-class="{'btn-tab-active': negTab==='ventas'}">Ventas</button>
+            <button class="btn-ghost" ng-click="negTab='inventario'"
+              ng-class="{'btn-tab-active': negTab==='inventario'}">Inventario</button>
+            <button class="btn-ghost" ng-click="negTab='materiales'"
+              ng-class="{'btn-tab-active': negTab==='materiales'}">Materiales</button>
+            <button class="btn-ghost" ng-click="negTab='recetas'"
+              ng-class="{'btn-tab-active': negTab==='recetas'}">Recetas</button>
+            <button class="btn-ghost" ng-click="negTab='rentabilidad'"
+              ng-class="{'btn-tab-active': negTab==='rentabilidad'}">Rentabilidad</button>
+          </div>
+        </header>
+
+        <!-- ── RESUMEN ── -->
+        <div ng-show="negTab==='resumen'">
+          <div class="neg-kpi-row">
+            <div class="neg-kpi"><span class="neg-kpi-ico">💰</span>
+              <div>
+                <p class="kpi-label">Total vendido</p>
+                <p class="kpi-value" style="color:var(--green)">${{totalVendido() | number}}</p>
+              </div>
+            </div>
+            <div class="neg-kpi"><span class="neg-kpi-ico">✅</span>
+              <div>
+                <p class="kpi-label">Total recibido</p>
+                <p class="kpi-value" style="color:var(--blue)">${{totalRecibido() | number}}</p>
+              </div>
+            </div>
+            <div class="neg-kpi"><span class="neg-kpi-ico">⏳</span>
+              <div>
+                <p class="kpi-label">Por cobrar</p>
+                <p class="kpi-value" style="color:var(--red)">${{totalPorCobrar() | number}}</p>
+              </div>
+            </div>
+            <div class="neg-kpi"><span class="neg-kpi-ico">📦</span>
+              <div>
+                <p class="kpi-label">Fragancias</p>
+                <p class="kpi-value" style="color:var(--accent2)">{{fragancias.length}}</p>
+              </div>
+            </div>
+          </div>
+          <div class="neg-panel-row">
+            <div class="neg-panel">
+              <h3 class="neg-panel-title">💸 Capital invertido</h3>
+              <div class="neg-big-num">${{capitalInvertido() | number}}</div>
+              <p class="neg-sub">Costo total del inventario</p>
+              <div class="section-divider" style="margin:1rem 0"><span>vs ganancias</span></div>
+              <div class="neg-big-num" style="color:var(--green)">${{gananciasNetas() | number}}</div>
+              <p class="neg-sub">Ganancia neta estimada</p>
+              <div class="neg-rentabilidad" ng-if="capitalInvertido()>0">
+                <span>Rentabilidad:</span><strong style="color:var(--accent2)">{{rentabilidad()}}%</strong>
+              </div>
+            </div>
+            <div class="neg-panel">
+              <h3 class="neg-panel-title">👥 Estado de clientes</h3>
+              <div class="neg-client-stat">
+                <div class="ncs-item"><span class="ncs-dot" style="background:var(--green)"></span><span>Pagaron
+                    completo</span><strong>{{clientesPagaron()}}</strong></div>
+                <div class="ncs-item"><span class="ncs-dot" style="background:var(--amber)"></span><span>Con
+                    abono</span><strong>{{clientesAbono()}}</strong></div>
+                <div class="ncs-item"><span class="ncs-dot" style="background:var(--red)"></span><span>Sin
+                    pagar</span><strong>{{clientesSinPagar()}}</strong></div>
+              </div>
+              <div class="section-divider" style="margin:1rem 0"><span>últimas ventas</span></div>
+              <div class="neg-mini-venta" ng-repeat="v in ventasNegocio | orderBy:'-creado_en' | limitTo:4">
+                <span class="neg-mv-name">{{v.cliente}}</span>
+                <span class="neg-mv-amt"
+                  ng-class="v.ya_pago ? 'paid' : (v.abono > 0 ? 'partial' : 'unpaid')">${{v.valor_total |
+                  number}}</span>
+              </div>
+              <div class="neg-empty" ng-if="ventasNegocio.length===0" style="padding:1rem">Sin ventas aún</div>
+            </div>
+          </div>
+          <!-- Mini-resumen de producción en el resumen general -->
+          <div class="neg-panel" style="margin-top:1.2rem" ng-if="recetas.length > 0">
+            <h3 class="neg-panel-title">⚗️ Producción — vista rápida</h3>
+            <div class="neg-kpi-row" style="margin-top:.75rem">
+              <div class="neg-kpi"><span class="neg-kpi-ico">💵</span>
+                <div>
+                  <p class="kpi-label">Inversión materiales</p>
+                  <p class="kpi-value" style="color:var(--red)">${{totalInversionMat() | number}}</p>
+                </div>
+              </div>
+              <div class="neg-kpi"><span class="neg-kpi-ico">📊</span>
+                <div>
+                  <p class="kpi-label">Margen promedio</p>
+                  <p class="kpi-value" style="color:var(--accent2)">{{margenGeneral()}}%</p>
+                </div>
+              </div>
+              <div class="neg-kpi"><span class="neg-kpi-ico">🧪</span>
+                <div>
+                  <p class="kpi-label">Recetas activas</p>
+                  <p class="kpi-value" style="color:var(--blue)">{{recetas.length}}</p>
+                </div>
+              </div>
+              <div class="neg-kpi"><span class="neg-kpi-ico">💰</span>
+                <div>
+                  <p class="kpi-label">Ganancia total lote</p>
+                  <p class="kpi-value" style="color:var(--green)">${{totalGananciaGeneral() | number}}</p>
+                </div>
+              </div>
+            </div>
+            <button class="btn-ghost" style="margin-top:.75rem;font-size:.78rem" ng-click="negTab='rentabilidad'">Ver
+              tabla de rentabilidad →</button>
+          </div>
+        </div>
+
+        <!-- ── VENTAS ── -->
+        <div ng-show="negTab==='ventas'">
+          <div
+            style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;flex-wrap:wrap;gap:8px">
+            <div class="filter-tabs">
+              <button ng-class="{'active':ventaFilter==='todas'}" ng-click="ventaFilter='todas'">Todas</button>
+              <button ng-class="{'active':ventaFilter==='pagadas'}" ng-click="ventaFilter='pagadas'">Pagadas</button>
+              <button ng-class="{'active':ventaFilter==='deben'}" ng-click="ventaFilter='deben'">Deben</button>
+            </div>
+            <button class="btn-primary" ng-click="openVentaModal()">+ Nueva venta</button>
+          </div>
+          <div class="loading-row" ng-show="loadingVentas">
+            <div class="spinner"></div><span>Cargando…</span>
+          </div>
+          <div ng-show="!loadingVentas">
+            <div class="neg-empty" ng-if="filteredVentas().length===0">Sin ventas registradas aún</div>
+            <div class="venta-card" ng-repeat="v in filteredVentas() | orderBy:'-creado_en'"
+              ng-class="{'paid-card': v.ya_pago, 'partial-card': !v.ya_pago && v.abono>0, 'unpaid-card': !v.ya_pago && v.abono==0}">
+              <div class="vc-left">
+                <p class="vc-name">{{v.cliente}}</p>
+                <p class="vc-desc" ng-if="v.fragancias_desc">{{v.fragancias_desc}}</p>
+                <p class="vc-meta">{{v.cantidad}} fragancia(s) · {{v.fecha | date:'dd MMM yyyy'}}</p>
+              </div>
+              <div class="vc-right">
+                <p class="vc-total">${{v.valor_total | number}}</p>
+                <p class="vc-abono" ng-if="v.abono>0">Abono: ${{v.abono | number}}</p>
+                <p class="vc-debe" ng-if="(v.valor_total - v.abono) > 0">Debe: ${{(v.valor_total - v.abono) | number}}
+                </p>
+                <span class="vc-badge" ng-class="v.ya_pago ? 'badge-ok' : (v.abono>0 ? 'badge-partial' : 'badge-no')">
+                  {{v.ya_pago ? '✓ Pagado' : (v.abono>0 ? 'Abono' : 'Pendiente')}}
+                </span>
+              </div>
+              <div class="vc-actions">
+                <button class="vc-btn-pay" ng-if="!v.ya_pago" ng-click="marcarPagado(v)" title="Pagado">✓</button>
+                <button class="vc-btn-abono" ng-if="!v.ya_pago" ng-click="openAbonoModal(v)" title="Abono">$</button>
+                <button class="vc-btn-abono" ng-click="openEditVenta(v)" title="Editar"
+                  style="background:var(--blue-bg);color:var(--blue)">✎</button>
+                <button class="vc-btn-del" ng-click="deleteVenta(v)" title="Eliminar">✕</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── INVENTARIO ── -->
+        <div ng-show="negTab==='inventario'">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:1.2rem">
+            <button class="btn-primary" ng-click="openFraganciaModal()">+ Añadir fragancia</button>
+          </div>
+          <div class="loading-row" ng-show="loadingFragancias">
+            <div class="spinner"></div><span>Cargando…</span>
+          </div>
+          <div ng-show="!loadingFragancias">
+            <div class="neg-empty" ng-if="fragancias.length===0">Sin fragancias en inventario. ¡Añade la primera!</div>
+            <div class="inv-grid">
+              <div class="inv-card" ng-repeat="f in fragancias | orderBy:'nombre'">
+                <div class="inv-card-top">
+                  <span class="inv-genero" ng-class="f.genero==='F'?'fem':'mas'">{{f.genero}}</span>
+                  <span class="inv-gramos">{{f.cantidad}} und</span>
+                </div>
+                <p class="inv-nombre">{{f.nombre}}</p>
+                <div class="inv-card-bot">
+                  <span class="inv-precio" style="color:var(--green)">${{f.precio_venta | number}}</span>
+                  <span class="inv-stock" ng-class="f.stock_real < 3 ? 'low-stock' : ''">Disponible:
+                    {{f.stock_real}}</span>
+                </div>
+                <div style="display:flex;gap:4px;margin-top:8px">
+                  <button
+                    style="flex:1;background:var(--blue-bg);border:none;color:var(--blue);cursor:pointer;font-size:.8rem;padding:.35rem;border-radius:6px"
+                    ng-click="openEditFragancia(f);$event.stopPropagation()">✎ Editar</button>
+                  <button
+                    style="flex:1;background:var(--red-bg);border:none;color:var(--red);cursor:pointer;font-size:.8rem;padding:.35rem;border-radius:6px"
+                    ng-click="deleteFragancia(f);$event.stopPropagation()">✕ Eliminar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── MATERIALES (antes en Producción) ── -->
+        <div ng-show="negTab==='materiales'">
+          <div
+            style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;flex-wrap:wrap;gap:8px">
+            <div class="filter-tabs">
+              <button ng-repeat="c in matCats" ng-class="{'active':matCatFilter===c.key}"
+                ng-click="matCatFilter=c.key">{{c.label}}</button>
+            </div>
+            <button class="btn-primary" ng-click="openMatModal()">+ Añadir material</button>
+          </div>
+          <div class="loading-row" ng-show="loadingMat">
+            <div class="spinner"></div><span>Cargando materiales…</span>
+          </div>
+          <div ng-show="!loadingMat">
+            <div class="neg-kpi-row" style="margin-bottom:1.5rem">
+              <div class="neg-kpi"><span class="neg-kpi-ico">💵</span>
+                <div>
+                  <p class="kpi-label">Inversión total</p>
+                  <p class="kpi-value" style="color:var(--red)">${{totalInversionMat() | number}}</p>
+                </div>
+              </div>
+              <div class="neg-kpi"><span class="neg-kpi-ico">🧪</span>
+                <div>
+                  <p class="kpi-label">Tipos de material</p>
+                  <p class="kpi-value" style="color:var(--accent2)">{{materiales.length}}</p>
+                </div>
+              </div>
+              <div class="neg-kpi"><span class="neg-kpi-ico">⚗️</span>
+                <div>
+                  <p class="kpi-label">Costo x frasco 30ml</p>
+                  <p class="kpi-value" style="color:var(--green)">${{costoEstimadoPorFrasco() | number}}</p>
+                </div>
+              </div>
+              <div class="neg-kpi"><span class="neg-kpi-ico">📊</span>
+                <div>
+                  <p class="kpi-label">Margen estimado</p>
+                  <p class="kpi-value" style="color:var(--accent2)">{{margenEstimado()}}%</p>
+                </div>
+              </div>
+            </div>
+            <div class="neg-empty" ng-if="filteredMateriales().length===0">Sin materiales registrados. ¡Añade el
+              primero!</div>
+            <div class="mat-grid">
+              <div class="mat-card" ng-repeat="m in filteredMateriales() | orderBy:'categoria'"
+                ng-class="{'mat-stock-low': m.cantidad_disponible < m.cantidad_total * 0.2 && m.cantidad_disponible > 0, 'mat-stock-out': m.cantidad_disponible <= 0}">
+                <button class="mat-del" ng-click="deleteMaterial(m)">✕</button>
+                <div class="mat-cat-badge" ng-class="'cat-'+m.categoria">{{m.categoria}}</div>
+                <p class="mat-nombre">{{m.nombre}}</p>
+                <div class="mat-stats">
+                  <div class="mat-stat-row"><span>Comprado</span><strong>{{m.cantidad_total}} {{m.unidad}}</strong>
+                  </div>
+                  <div class="mat-stat-row"><span>Disponible</span><strong
+                      ng-class="m.cantidad_disponible <= 0 ? 'td-red' : ''">{{m.cantidad_disponible}}
+                      {{m.unidad}}</strong></div>
+                  <div class="mat-stat-row"><span>Invertido</span><strong>${{m.precio_total | number}}</strong></div>
+                </div>
+                <div class="mat-precio-unit">
+                  <span>Precio / {{m.unidad}}</span>
+                  <strong>${{m.precio_por_unidad | number}}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── RECETAS (antes en Producción) ── -->
+        <div ng-show="negTab==='recetas'">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:1.2rem">
+            <button class="btn-primary" ng-click="openRecetaModal()">+ Nueva receta</button>
+          </div>
+          <div class="loading-row" ng-show="loadingRec">
+            <div class="spinner"></div><span>Cargando recetas…</span>
+          </div>
+          <div ng-show="!loadingRec">
+            <div class="neg-empty" ng-if="recetas.length===0">Sin recetas. Crea la primera para ver el costo exacto por
+              fragancia.</div>
+            <div class="rec-grid">
+              <div class="rec-card" ng-repeat="r in recetas | orderBy:'nombre'">
+                <div class="rec-header">
+                  <div>
+                    <p class="rec-nombre">{{r.nombre}}</p>
+                    <span class="rec-genero"
+                      ng-class="r.genero==='F'?'fem':(r.genero==='M'?'mas':'uni')">{{r.genero==='F'?'Femenino':(r.genero==='M'?'Masculino':'Unisex')}}</span>
+                    <p class="rec-ml">{{r.ml}}ml por frasco</p>
+                  </div>
+                </div>
+                <div class="rec-costos">
+                  <div class="rc-item">
+                    <p class="rc-lbl">Costo producción</p>
+                    <p class="rc-val">${{costoProduccion(r) | number}}</p>
+                  </div>
+                  <div class="rc-item">
+                    <p class="rc-lbl">Costo empaque</p>
+                    <p class="rc-val">${{costoEmpaque(r) | number}}</p>
+                  </div>
+                  <div class="rc-item">
+                    <p class="rc-lbl">Costo total / frasco</p>
+                    <p class="rc-val red">${{costoTotal(r) | number}}</p>
+                  </div>
+                  <div class="rc-item">
+                    <p class="rc-lbl">Precio venta</p>
+                    <p class="rc-val green">${{r.precio_venta | number}}</p>
+                  </div>
+                  <div class="rc-item">
+                    <p class="rc-lbl">Ganancia / frasco</p>
+                    <p class="rc-val accent">${{gananciaUnitaria(r) | number}}</p>
+                  </div>
+                  <div class="rc-item">
+                    <p class="rc-lbl">Ganancia total lote</p>
+                    <p class="rc-val accent">${{gananciaTotalLote(r) | number}}</p>
+                  </div>
+                </div>
+                <div class="rec-footer">
+                  <span class="rec-stock">Stock: <strong>{{r.stock}} frascos</strong></span>
+                  <span class="rec-margen" ng-class="margenClass(r)">{{margenPct(r)}}% margen</span>
+                </div>
+                <div class="rec-actions">
+                  <button class="btn-ghost" style="font-size:.75rem;padding:.35rem .7rem"
+                    ng-click="verIngredientes(r)">Ver ingredientes</button>
+                  <button class="btn-ghost" style="font-size:.75rem;padding:.35rem .7rem"
+                    ng-click="openRecetaModal(r)">Editar</button>
+                  <button class="vc-btn-del" ng-click="deleteReceta(r)">✕</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── RENTABILIDAD (antes en Producción) ── -->
+        <div ng-show="negTab==='rentabilidad'">
+          <div class="loading-row" ng-show="loadingRec">
+            <div class="spinner"></div><span>Calculando…</span>
+          </div>
+          <div ng-show="!loadingRec">
+            <div class="neg-empty" ng-if="recetas.length===0">Crea recetas para ver la tabla de rentabilidad.</div>
+            <div class="rent-table-wrap" ng-if="recetas.length>0">
+              <table class="rent-table">
+                <thead>
+                  <tr>
+                    <th style="text-align:left">Fragancia</th>
+                    <th>ML</th>
+                    <th>Costo prod.</th>
+                    <th>Costo emp.</th>
+                    <th>Costo total</th>
+                    <th>Precio venta</th>
+                    <th>Gan. / frasco</th>
+                    <th>Stock</th>
+                    <th>Gan. total</th>
+                    <th>Margen</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr ng-repeat="r in recetas | orderBy:'-precio_venta'">
+                    <td>{{r.nombre}}</td>
+                    <td>{{r.ml}}</td>
+                    <td>${{costoProduccion(r) | number}}</td>
+                    <td>${{costoEmpaque(r) | number}}</td>
+                    <td class="td-red">${{costoTotal(r) | number}}</td>
+                    <td>${{r.precio_venta | number}}</td>
+                    <td class="td-green">${{gananciaUnitaria(r) | number}}</td>
+                    <td>{{r.stock}}</td>
+                    <td class="td-accent">${{gananciaTotalLote(r) | number}}</td>
+                    <td ng-class="margenClass(r)">{{margenPct(r)}}%</td>
+                  </tr>
+                  <tr class="rent-total">
+                    <td>TOTAL</td>
+                    <td>—</td>
+                    <td>—</td>
+                    <td>—</td>
+                    <td class="td-red">${{totalCostoProduccionGeneral() | number}}</td>
+                    <td>—</td>
+                    <td>—</td>
+                    <td>{{totalStockGeneral()}}</td>
+                    <td class="td-accent">${{totalGananciaGeneral() | number}}</td>
+                    <td class="td-accent">{{margenGeneral()}}%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- MAYORISTAS -->
+      <section ng-show="activeView==='mayoristas'" class="view-section">
+        <header class="view-header">
+          <div>
+            <h1>🤝 Mayoristas</h1>
+            <p class="subtitle">Revendedores y planes de trabajo</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn-ghost" ng-click="mayTab='planes'"
+              ng-class="{'btn-tab-active':mayTab==='planes'}">Planes</button>
+            <button class="btn-ghost" ng-click="mayTab='revendedores'"
+              ng-class="{'btn-tab-active':mayTab==='revendedores'}">Revendedores</button>
+          </div>
+        </header>
+
+        <!-- PLANES -->
+        <div ng-show="mayTab==='planes'">
+          <p class="planes-intro">Empieza tu negocio de fragancias sin necesidad de fabricar. Te entrego todo listo para
+            vender y con excelente ganancia. 🌸</p>
+          <div class="planes-grid">
+            <div class="plan-card plan-starter">
+              <div class="plan-badge">STARTER</div>
+              <div class="plan-range">7 a 14</div>
+              <p class="plan-unit-label">fragancias de 30ml</p>
+              <div class="plan-price">$14.000<span>/und</span></div>
+              <div class="plan-ganancia">Ganancia: <strong>$6.000 c/u</strong></div>
+              <ul class="plan-includes">
+                <li>✓ Esencia alta concentración</li>
+                <li>✓ Toque de feromona</li>
+                <li>✓ Alcohol perfumero de calidad</li>
+                <li>✓ Frasco 30ml incluido</li>
+                <li>✓ Empaque individual (bolsa)</li>
+                <li>✓ Sticker de marca</li>
+                <li>✓ Tarjeta incluida</li>
+              </ul>
+              <button class="plan-cta" ng-click="mayTab='revendedores'; openMayoristaModal('7a14')">Registrar
+                revendedor</button>
+            </div>
+            <div class="plan-card plan-pro">
+              <div class="plan-badge popular">MÁS POPULAR ⭐</div>
+              <div class="plan-range">15 a 22</div>
+              <p class="plan-unit-label">fragancias de 30ml</p>
+              <div class="plan-price">$13.000<span>/und</span></div>
+              <div class="plan-ganancia">Ganancia: <strong>$7.000 c/u</strong></div>
+              <ul class="plan-includes">
+                <li>✓ Todo lo del plan Starter</li>
+                <li>✓ Mayor margen de ganancia</li>
+                <li>✓ Prioridad en nuevos aromas</li>
+                <li>✓ Soporte personalizado</li>
+              </ul>
+              <button class="plan-cta" ng-click="mayTab='revendedores'; openMayoristaModal('15a22')">Registrar
+                revendedor</button>
+            </div>
+            <div class="plan-card plan-elite">
+              <div class="plan-badge">ELITE 💎</div>
+              <div class="plan-range">23+</div>
+              <p class="plan-unit-label">fragancias de 30ml</p>
+              <div class="plan-price">$12.000<span>/und</span></div>
+              <div class="plan-ganancia">Ganancia: <strong>$8.000 c/u</strong></div>
+              <ul class="plan-includes">
+                <li>✓ Todo lo del plan Pro</li>
+                <li>✓ Máximo margen de ganancia</li>
+                <li>✓ Acceso a aromas exclusivos</li>
+                <li>✓ Mentoría de ventas</li>
+              </ul>
+              <button class="plan-cta" ng-click="mayTab='revendedores'; openMayoristaModal('23mas')">Registrar
+                revendedor</button>
+            </div>
+          </div>
+          <div class="plan-extras">
+            <div class="plan-extra-card"><span class="pe-ico">🎨</span>
+              <div>
+                <p class="pe-title">Mostrario x30</p>
+                <p class="pe-price">$35.000</p>
+              </div>
+            </div>
+            <div class="plan-extra-card"><span class="pe-ico">🔄</span>
+              <div>
+                <p class="pe-title">Recarga mostrario x30</p>
+                <p class="pe-price">$25.000</p>
+              </div>
+            </div>
+            <div class="plan-extra-card"><span class="pe-ico">💧</span>
+              <div>
+                <p class="pe-title">Recarga mostrario x1</p>
+                <p class="pe-price">$1.000</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- REVENDEDORES -->
+        <div ng-show="mayTab==='revendedores'">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:1.2rem">
+            <button class="btn-primary" ng-click="openMayoristaModal(null)">+ Nuevo revendedor</button>
+          </div>
+          <div class="loading-row" ng-show="loadingMayoristas">
+            <div class="spinner"></div><span>Cargando…</span>
+          </div>
+          <div ng-show="!loadingMayoristas">
+            <div class="neg-empty" ng-if="mayoristas.length===0">Sin revendedores registrados aún</div>
+            <div class="rev-grid">
+              <div class="rev-card" ng-repeat="m in mayoristas | orderBy:'-creado_en'">
+                <div class="rev-top">
+                  <div class="rev-avatar">{{m.nombre[0].toUpperCase()}}</div>
+                  <div class="rev-info">
+                    <p class="rev-name">{{m.nombre}}</p>
+                    <p class="rev-city">{{m.ciudad || 'Sin ciudad'}}</p>
+                  </div>
+                  <span class="rev-plan" ng-class="'plan-badge-'+m.plan">{{planLabel(m.plan)}}</span>
+                </div>
+                <div class="rev-stats">
+                  <div class="rs-item"><span>Total pedidos</span><strong>${{m.total_pedidos | number}}</strong></div>
+                  <div class="rs-item"><span>Estado</span><span class="rev-estado"
+                      ng-class="m.estado==='activo'?'est-ok':'est-no'">{{m.estado}}</span></div>
+                </div>
+                <p class="rev-notas" ng-if="m.notas">📝 {{m.notas}}</p>
+                <div class="rev-actions">
+                  <button class="btn-ghost" style="font-size:.75rem;padding:.35rem .7rem"
+                    ng-click="openPedidoMayoristaModal(m)">+ Pedido</button>
+                  <button class="btn-ghost" style="font-size:.75rem;padding:.35rem .7rem;color:var(--blue)"
+                    ng-click="openMayoristaModal(null, m)">✎ Editar</button>
+                  <button class="vc-btn-del" ng-click="deleteMayorista(m)">✕</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
 
@@ -369,34 +1061,26 @@
   <div class="modal modal-quick" ng-show="showEventModal && !showFullForm">
     <div class="quick-header">
       <div class="quick-cat-dots">
-        <button class="qcat-btn" ng-repeat="(k,v) in categories"
-          ng-class="{'qcat-active': newEvent.categoria === k}"
-          ng-style="{'--cc': v.color}"
-          ng-click="newEvent.categoria = k"
-          title="{{v.label}}"></button>
+        <button class="qcat-btn" ng-repeat="(k,v) in categories" ng-class="{'qcat-active': newEvent.categoria === k}"
+          ng-style="{'--cc': v.color}" ng-click="newEvent.categoria = k" title="{{v.label}}"></button>
       </div>
-      <button class="btn-ghost" style="font-size:.75rem;padding:.3rem .6rem" ng-click="showFullForm=true">+ Detalles</button>
+      <button class="btn-ghost" style="font-size:.75rem;padding:.3rem .6rem" ng-click="showFullForm=true">+
+        Detalles</button>
     </div>
-
-    <input class="quick-title-input" type="text"
-      ng-model="newEvent.titulo"
-      placeholder="¿Qué vas a hacer?"
-      ng-keypress="quickSaveEnter($event)"
-      autofocus />
-
+    <input class="quick-title-input" type="text" ng-model="newEvent.titulo" placeholder="¿Qué vas a hacer?"
+      ng-keypress="quickSaveEnter($event)" autofocus />
     <div class="quick-time-row">
       <span class="quick-date-lbl">{{newEvent.fecha | date:'EEE d MMM'}}</span>
       <input type="time" ng-model="newEvent.hora_inicio" class="quick-time" />
       <span class="quick-sep">→</span>
       <input type="time" ng-model="newEvent.hora_fin" class="quick-time" />
     </div>
-
     <div class="quick-actions">
       <button class="btn-ghost" ng-click="closeEventModal()">Cancelar</button>
-      <button class="btn-danger-sm" ng-show="editingEvent" ng-click="deleteEvent(editingEvent, null); closeEventModal()">Eliminar</button>
-      <button class="btn-primary" ng-click="saveEvent()" ng-disabled="savingEvent || !newEvent.titulo">
-        {{savingEvent ? '…' : (editingEvent ? 'Actualizar' : 'Guardar')}}
-      </button>
+      <button class="btn-danger-sm" ng-show="editingEvent"
+        ng-click="deleteEvent(editingEvent, null); closeEventModal()">Eliminar</button>
+      <button class="btn-primary" ng-click="saveEvent()" ng-disabled="savingEvent || !newEvent.titulo">{{savingEvent ?
+        '…' : (editingEvent ? 'Actualizar' : 'Guardar')}}</button>
     </div>
   </div>
 
@@ -404,62 +1088,40 @@
   <div class="overlay" ng-show="showEventModal && showFullForm" ng-click="closeEventModal()"></div>
   <div class="modal" ng-show="showEventModal && showFullForm">
     <h2>{{editingEvent ? 'Editar evento' : 'Nuevo evento'}}</h2>
-    <div class="form-group">
-      <label>Título *</label>
-      <input type="text" ng-model="newEvent.titulo" placeholder="Reunión, clase, cita…" />
-    </div>
+    <div class="form-group"><label>Título *</label><input type="text" ng-model="newEvent.titulo"
+        placeholder="Reunión, clase, cita…" /></div>
     <div class="form-row">
-      <div class="form-group">
-        <label>Fecha</label>
-        <input type="date" ng-model="newEvent.fecha" />
-      </div>
-      <div class="form-group">
-        <label>Categoría</label>
-        <select ng-model="newEvent.categoria">
+      <div class="form-group"><label>Fecha</label><input type="date" ng-model="newEvent.fecha" /></div>
+      <div class="form-group"><label>Categoría</label><select ng-model="newEvent.categoria">
           <option ng-repeat="(k,v) in categories" value="{{k}}">{{v.label}}</option>
-        </select>
-      </div>
+        </select></div>
     </div>
     <div class="form-row">
-      <div class="form-group">
-        <label>Hora inicio</label>
-        <input type="time" ng-model="newEvent.hora_inicio" />
-      </div>
-      <div class="form-group">
-        <label>Hora fin</label>
-        <input type="time" ng-model="newEvent.hora_fin" />
-      </div>
+      <div class="form-group"><label>Hora inicio</label><input type="time" ng-model="newEvent.hora_inicio" /></div>
+      <div class="form-group"><label>Hora fin</label><input type="time" ng-model="newEvent.hora_fin" /></div>
     </div>
-    <div class="form-group">
-      <label>Descripción</label>
-      <textarea ng-model="newEvent.descripcion" placeholder="Detalles opcionales…" rows="2"></textarea>
-    </div>
+    <div class="form-group"><label>Descripción</label><textarea ng-model="newEvent.descripcion"
+        placeholder="Detalles opcionales…" rows="2"></textarea></div>
     <div class="modal-actions">
       <button class="btn-ghost" ng-click="showFullForm=false">← Volver</button>
-      <button class="btn-danger-sm" ng-show="editingEvent" ng-click="deleteEvent(editingEvent, null); closeEventModal()">Eliminar</button>
-      <button class="btn-primary" ng-click="saveEvent()" ng-disabled="savingEvent">
-        {{savingEvent ? 'Guardando…' : (editingEvent ? 'Actualizar' : 'Guardar')}}
-      </button>
+      <button class="btn-danger-sm" ng-show="editingEvent"
+        ng-click="deleteEvent(editingEvent, null); closeEventModal()">Eliminar</button>
+      <button class="btn-primary" ng-click="saveEvent()" ng-disabled="savingEvent">{{savingEvent ? 'Guardando…' :
+        (editingEvent ? 'Actualizar' : 'Guardar')}}</button>
     </div>
   </div>
 
   <!-- MODAL TRANSACCIÓN -->
   <div class="overlay" ng-show="showTransModal" ng-click="closeTransModal()"></div>
   <div class="modal" ng-show="showTransModal">
-    <h2>{{newTrans.tipo==='ingreso' ? 'Nuevo ingreso' : 'Nuevo gasto'}}</h2>
-    <div class="form-group">
-      <label>Descripción *</label>
-      <input type="text" ng-model="newTrans.descripcion" placeholder="Ej: Salario, Mercado…" />
-    </div>
+    <h2>{{editingTrans ? (newTrans.tipo==='ingreso' ? 'Editar ingreso' : 'Editar gasto') : (newTrans.tipo==='ingreso' ?
+      'Nuevo ingreso' : 'Nuevo gasto')}}</h2>
+    <div class="form-group"><label>Descripción *</label><input type="text" ng-model="newTrans.descripcion"
+        placeholder="Ej: Salario, Mercado…" /></div>
     <div class="form-row">
-      <div class="form-group">
-        <label>Monto *</label>
-        <input type="number" ng-model="newTrans.monto" placeholder="0" min="0" />
-      </div>
-      <div class="form-group">
-        <label>Fecha</label>
-        <input type="date" ng-model="newTrans.fecha" />
-      </div>
+      <div class="form-group"><label>Monto *</label><input type="number" ng-model="newTrans.monto" placeholder="0"
+          min="0" /></div>
+      <div class="form-group"><label>Fecha</label><input type="date" ng-model="newTrans.fecha" /></div>
     </div>
     <div class="form-group">
       <label>Categoría</label>
@@ -486,12 +1148,382 @@
     </div>
     <div class="modal-actions">
       <button class="btn-ghost" ng-click="closeTransModal()">Cancelar</button>
-      <button class="btn-primary" ng-click="saveTrans()" ng-disabled="savingTrans">
-        {{savingTrans ? 'Guardando…' : 'Guardar'}}
+      <button class="btn-primary" ng-click="saveTrans()" ng-disabled="savingTrans">{{savingTrans ? 'Guardando…' :
+        (editingTrans ? 'Actualizar' : 'Guardar')}}</button>
+    </div>
+  </div>
+
+  <!-- MODAL VENTA -->
+  <div class="overlay" ng-show="showVentaModal" ng-click="closeVentaModal()"></div>
+  <div class="modal" ng-show="showVentaModal" style="width:min(580px,95vw)">
+    <h2>Nueva venta</h2>
+    <div class="form-group"><label>Nombre del cliente *</label><input type="text" ng-model="newVenta.cliente"
+        placeholder="Ej: María García" /></div>
+    <div class="section-divider" style="margin:.8rem 0"><span>Fragancias vendidas</span></div>
+    <div class="ing-list">
+      <div class="ing-row" ng-repeat="item in newVenta.items">
+        <select class="ing-sel" ng-model="item.fragancia_id" ng-change="onFraganciaSelect(item)">
+          <option value="">— Selecciona fragancia —</option>
+          <option ng-repeat="f in fragancias" value="{{f.id}}" ng-disabled="f.stock <= 0">
+            {{f.nombre}} (Stock: {{f.stock}})
+          </option>
+        </select>
+        <input type="number" class="ing-qty" ng-model="item.cantidad" min="1" ng-max="getStock(item.fragancia_id)"
+          ng-change="recalcularTotal()" placeholder="1" />
+        <span class="ing-unit">und</span>
+        <span class="ing-costo" ng-if="item.fragancia_id">${{getPrecioItem(item) | number}}</span>
+        <button class="ing-del-btn" ng-click="removeVentaItem($index)">✕</button>
+      </div>
+    </div>
+    <button class="btn-ghost" style="width:100%;margin-bottom:.75rem" ng-click="addVentaItem()">+ Añadir
+      fragancia</button>
+    <div
+      style="background:var(--bg3);border-radius:var(--radius-sm);padding:.8rem 1rem;box-shadow:var(--neo-in);margin-bottom:1rem"
+      ng-if="newVenta.items.length > 0">
+      <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:4px">
+        <span style="color:var(--text3)">Total unidades:</span>
+        <strong>{{totalUnidadesVenta()}}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:.82rem">
+        <span style="color:var(--text3)">Valor calculado:</span>
+        <strong style="color:var(--accent2);font-family:'JetBrains Mono',monospace">${{newVenta.valor_total |
+          number}}</strong>
+      </div>
+      <p style="font-size:.7rem;color:var(--text3);margin-top:6px">Puedes ajustar el valor si hiciste descuento.</p>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Valor total (COP) *</label><input type="number" ng-model="newVenta.valor_total"
+          placeholder="0" /></div>
+      <div class="form-group"><label>Abono recibido</label><input type="number" ng-model="newVenta.abono"
+          placeholder="0" /></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Fecha</label><input type="date" ng-model="newVenta.fecha" /></div>
+      <div class="form-group"><label>¿Ya pagó completo?</label><select ng-model="newVenta.ya_pago">
+          <option value="false">No</option>
+          <option value="true">Sí</option>
+        </select></div>
+    </div>
+    <div ng-if="stockInsuficiente()"
+      style="background:var(--red-bg);border:1px solid rgba(240,98,146,.3);border-radius:var(--radius-xs);padding:.6rem .9rem;font-size:.8rem;color:var(--red);margin-bottom:.75rem">
+      ⚠️ Una o más fragancias no tienen stock suficiente.
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" ng-click="closeVentaModal()">Cancelar</button>
+      <button class="btn-primary" ng-click="saveVenta()" ng-disabled="savingVenta || stockInsuficiente()">
+        {{savingVenta ? 'Guardando…' : 'Guardar y descontar stock'}}
       </button>
+    </div>
+  </div>
+
+  <!-- MODAL ABONO -->
+  <div class="overlay" ng-show="showAbonoModal" ng-click="showAbonoModal=false"></div>
+  <div class="modal" ng-show="showAbonoModal" style="width:min(380px,90vw)">
+    <h2>Registrar abono</h2>
+    <p style="color:var(--text2);font-size:.9rem;margin-bottom:1rem">Cliente: <strong>{{abonoVenta.cliente}}</strong>
+    </p>
+    <div class="form-group"><label>Monto del abono</label><input type="number" ng-model="nuevoAbono" placeholder="0" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" ng-click="showAbonoModal=false">Cancelar</button>
+      <button class="btn-primary" ng-click="saveAbono()">Guardar abono</button>
+    </div>
+  </div>
+
+  <!-- MODAL FRAGANCIA -->
+  <div class="overlay" ng-show="showFraganciaModal" ng-click="showFraganciaModal=false"></div>
+  <div class="modal" ng-show="showFraganciaModal">
+    <h2>Añadir fragancia</h2>
+    <div class="form-group"><label>Nombre del aroma *</label><input type="text" ng-model="newFragancia.nombre"
+        placeholder="Ej: Cloud - Ariana Grande" /></div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Género</label>
+        <select ng-model="newFragancia.genero">
+          <option value="F">Femenino</option>
+          <option value="M">Masculino</option>
+          <option value="U">Unisex</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Cantidad comprada (und)</label><input type="number"
+          ng-model="newFragancia.cantidad" placeholder="1" /></div>
+    </div>
+    <div class="form-group"><label>Precio de venta (COP)</label><input type="number"
+        ng-model="newFragancia.precio_venta" placeholder="0" /></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" ng-click="showFraganciaModal=false">Cancelar</button>
+      <button class="btn-primary" ng-click="saveFragancia()">Guardar</button>
+    </div>
+  </div>
+
+  <!-- MODAL MAYORISTA -->
+  <div class="overlay" ng-show="showMayoristaModal" ng-click="showMayoristaModal=false"></div>
+  <div class="modal" ng-show="showMayoristaModal">
+    <h2>{{editingMayorista ? 'Editar revendedor' : 'Nuevo revendedor'}}</h2>
+    <div class="form-row">
+      <div class="form-group"><label>Nombre *</label><input type="text" ng-model="newMayorista.nombre"
+          placeholder="Nombre completo" /></div>
+      <div class="form-group"><label>Teléfono</label><input type="text" ng-model="newMayorista.telefono"
+          placeholder="3001234567" /></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Ciudad</label><input type="text" ng-model="newMayorista.ciudad"
+          placeholder="Ej: Montería" /></div>
+      <div class="form-group"><label>Plan</label><select ng-model="newMayorista.plan">
+          <option value="7a14">Starter (7–14)</option>
+          <option value="15a22">Pro (15–22)</option>
+          <option value="23mas">Elite (23+)</option>
+        </select></div>
+    </div>
+    <div class="form-group"><label>Notas</label><textarea ng-model="newMayorista.notas" placeholder="Observaciones…"
+        rows="2"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" ng-click="showMayoristaModal=false">Cancelar</button>
+      <button class="btn-primary" ng-click="saveMayorista()">{{editingMayorista ? 'Guardar cambios' :
+        'Registrar'}}</button>
+    </div>
+  </div>
+
+  <!-- MODAL PEDIDO MAYORISTA -->
+  <div class="overlay" ng-show="showPedidoMayModal" ng-click="showPedidoMayModal=false"></div>
+  <div class="modal" ng-show="showPedidoMayModal" style="width:min(400px,90vw)">
+    <h2>Nuevo pedido — {{pedidoMayoristaTarget.nombre}}</h2>
+    <div class="form-row">
+      <div class="form-group"><label>Cantidad</label><input type="number" ng-model="newPedidoMay.cantidad"
+          placeholder="10" min="1" /></div>
+      <div class="form-group"><label>Precio unitario (COP)</label><input type="number"
+          ng-model="newPedidoMay.precio_unitario" placeholder="13000" /></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Abono</label><input type="number" ng-model="newPedidoMay.abono" placeholder="0" />
+      </div>
+      <div class="form-group"><label>Fecha</label><input type="date" ng-model="newPedidoMay.fecha" /></div>
+    </div>
+    <div class="form-group"><label>Estado</label><select ng-model="newPedidoMay.estado">
+        <option value="pendiente">Pendiente</option>
+        <option value="enviado">Enviado</option>
+        <option value="entregado">Entregado</option>
+      </select></div>
+    <p style="color:var(--accent2);font-family:'JetBrains Mono',monospace;font-size:1.1rem;margin:.5rem 0"
+      ng-if="newPedidoMay.cantidad && newPedidoMay.precio_unitario">
+      Total: ${{(newPedidoMay.cantidad * newPedidoMay.precio_unitario) | number}}
+    </p>
+    <div class="modal-actions">
+      <button class="btn-ghost" ng-click="showPedidoMayModal=false">Cancelar</button>
+      <button class="btn-primary" ng-click="savePedidoMayorista()">Guardar pedido</button>
+    </div>
+  </div>
+
+  <!-- MODAL MATERIAL -->
+  <div class="overlay" ng-show="showMatModal" ng-click="showMatModal=false"></div>
+  <div class="modal" ng-show="showMatModal">
+    <h2>{{editingMat ? 'Editar material' : 'Nuevo material'}}</h2>
+    <div class="form-group"><label>Nombre *</label><input type="text" ng-model="newMat.nombre"
+        placeholder="Ej: Esencia Cloud, Frascos 30ml…" /></div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Categoría</label>
+        <select ng-model="newMat.categoria">
+          <option value="esencia">Esencia</option>
+          <option value="feromona">Feromona</option>
+          <option value="alcohol">Alcohol</option>
+          <option value="frasco">Frasco</option>
+          <option value="empaque">Empaque (bolsa/sticker/tarjeta/logo)</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Unidad de medida</label>
+        <select ng-model="newMat.unidad">
+          <option value="g">Gramos (g)</option>
+          <option value="ml">Mililitros (ml)</option>
+          <option value="L">Litros (L)</option>
+          <option value="und">Unidades (und)</option>
+          <option value="kg">Kilogramos (kg)</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Cantidad comprada</label><input type="number" ng-model="newMat.cantidad_total"
+          placeholder="Ej: 300" /></div>
+      <div class="form-group"><label>Precio total pagado (COP)</label><input type="number"
+          ng-model="newMat.precio_total" placeholder="Ej: 10000" /></div>
+    </div>
+    <div class="form-group"><label>Cantidad disponible</label><input type="number" ng-model="newMat.cantidad_disponible"
+        placeholder="Igual a cantidad comprada si es nuevo" /></div>
+    <div
+      style="background:var(--bg3);border-radius:var(--radius-sm);padding:.75rem 1rem;margin-bottom:1rem;box-shadow:var(--neo-in)"
+      ng-if="newMat.cantidad_total > 0 && newMat.precio_total > 0">
+      <p style="font-size:.78rem;color:var(--text3)">Precio calculado por {{newMat.unidad || 'unidad'}}:</p>
+      <p style="font-family:'JetBrains Mono',monospace;font-size:1.1rem;color:var(--green);margin-top:4px">
+        ${{(newMat.precio_total / newMat.cantidad_total) | number}} / {{newMat.unidad}}</p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" ng-click="showMatModal=false">Cancelar</button>
+      <button class="btn-primary" ng-click="saveMaterial()">{{editingMat ? 'Actualizar' : 'Guardar'}}</button>
+    </div>
+  </div>
+
+  <!-- MODAL RECETA -->
+  <div class="overlay" ng-show="showRecModal" ng-click="showRecModal=false"></div>
+  <div class="modal" ng-show="showRecModal" style="width:min(600px,95vw)">
+    <h2>{{editingRec ? 'Editar receta' : 'Nueva receta de fragancia'}}</h2>
+    <div class="form-row">
+      <div class="form-group"><label>Nombre *</label><input type="text" ng-model="newRec.nombre"
+          placeholder="Ej: Cloud - Ariana Grande" /></div>
+      <div class="form-group">
+        <label>Género</label>
+        <select ng-model="newRec.genero">
+          <option value="F">Femenino</option>
+          <option value="M">Masculino</option>
+          <option value="U">Unisex</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>ML por frasco</label><input type="number" ng-model="newRec.ml" placeholder="30" />
+      </div>
+      <div class="form-group"><label>Precio de venta (COP)</label><input type="number" ng-model="newRec.precio_venta"
+          placeholder="20000" /></div>
+    </div>
+    <div class="form-group"><label>Stock de frascos</label><input type="number" ng-model="newRec.stock"
+        placeholder="0" /></div>
+    <div class="section-divider" style="margin:1rem 0"><span>Ingredientes por frasco</span></div>
+    <div class="ing-list">
+      <div class="ing-row" ng-repeat="ing in newRec.ingredientes">
+        <select class="ing-sel" ng-model="ing.material_id" ng-change="ing.material = getMaterial(ing.material_id)">
+          <option value="">— Selecciona material —</option>
+          <option ng-repeat="m in materiales" value="{{m.id}}">{{m.nombre}} ({{m.unidad}})</option>
+        </select>
+        <input type="number" class="ing-qty" ng-model="ing.cantidad_usada" placeholder="0" min="0" step="0.1" />
+        <span class="ing-unit">{{getMatUnidad(ing.material_id)}}</span>
+        <span class="ing-costo">${{ingCosto(ing) | number}}</span>
+        <button class="ing-del-btn" ng-click="removeIngrediente($index)">✕</button>
+      </div>
+    </div>
+    <button class="btn-ghost" style="width:100%;margin-bottom:.5rem" ng-click="addIngrediente()">+ Agregar
+      ingrediente</button>
+    <div class="ing-total-row">
+      <span>Costo total por frasco:</span>
+      <strong>${{costoTotalNueva() | number}}</strong>
+    </div>
+    <div class="ing-total-row" style="margin-top:4px" ng-if="newRec.precio_venta > 0">
+      <span>Ganancia estimada:</span>
+      <strong style="color:var(--green)">${{(newRec.precio_venta - costoTotalNueva()) | number}}
+        ({{margenNueva()}}%)</strong>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" ng-click="showRecModal=false">Cancelar</button>
+      <button class="btn-primary" ng-click="saveReceta()">{{editingRec ? 'Actualizar' : 'Guardar receta'}}</button>
+    </div>
+  </div>
+
+  <!-- MODAL VER INGREDIENTES -->
+  <div class="overlay" ng-show="showIngModal" ng-click="showIngModal=false"></div>
+  <div class="modal" ng-show="showIngModal" style="width:min(500px,95vw)">
+    <h2>Ingredientes — {{verIngRec.nombre}}</h2>
+    <div class="loading-row" ng-show="loadingIng">
+      <div class="spinner"></div><span>Cargando…</span>
+    </div>
+    <div ng-show="!loadingIng">
+      <div class="ing-list">
+        <div class="ing-row" ng-repeat="ing in ingredientesVer">
+          <span style="flex:1;font-size:.85rem">{{ing.mat_nombre}}</span>
+          <span class="ing-qty"
+            style="width:auto;text-align:right;font-family:'JetBrains Mono',monospace">{{ing.cantidad_usada}}</span>
+          <span class="ing-unit">{{ing.mat_unidad}}</span>
+          <span class="ing-costo">${{ing.costo | number}}</span>
+        </div>
+      </div>
+      <div class="ing-total-row">
+        <span>Costo total por frasco:</span>
+        <strong>${{totalIngCostVer() | number}}</strong>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" ng-click="showIngModal=false">Cerrar</button>
+    </div>
+  </div>
+
+  <!-- MODAL EDITAR TAREA -->
+  <div class="overlay" ng-show="showTaskModal" ng-click="showTaskModal=false"></div>
+  <div class="modal" ng-show="showTaskModal" style="width:min(440px,92vw)">
+    <h2>Editar tarea</h2>
+    <div class="form-group"><label>Texto *</label><input type="text" ng-model="editTask.texto"
+        placeholder="Descripción de la tarea" /></div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Prioridad</label>
+        <select ng-model="editTask.prioridad">
+          <option value="alta">Alta</option>
+          <option value="media">Media</option>
+          <option value="baja">Baja</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Fecha límite</label><input type="date" ng-model="editTask.fecha_limite" /></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" ng-click="showTaskModal=false">Cancelar</button>
+      <button class="btn-primary" ng-click="saveTaskEdit()">Guardar cambios</button>
+    </div>
+  </div>
+
+  <!-- MODAL EDITAR VENTA -->
+  <div class="overlay" ng-show="showEditVentaModal" ng-click="showEditVentaModal=false"></div>
+  <div class="modal" ng-show="showEditVentaModal">
+    <h2>Editar venta</h2>
+    <div class="form-group"><label>Cliente *</label><input type="text" ng-model="editVentaData.cliente"
+        placeholder="Nombre del cliente" /></div>
+    <div class="form-row">
+      <div class="form-group"><label>Cantidad</label><input type="number" ng-model="editVentaData.cantidad" min="1" />
+      </div>
+      <div class="form-group"><label>Valor total</label><input type="number" ng-model="editVentaData.valor_total" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Abono</label><input type="number" ng-model="editVentaData.abono" /></div>
+      <div class="form-group"><label>Fecha</label><input type="date" ng-model="editVentaData.fecha" /></div>
+    </div>
+    <div class="form-group"><label>Fragancias</label><input type="text" ng-model="editVentaData.fragancias_desc" />
+    </div>
+    <div class="form-group"><label>¿Ya pagó?</label>
+      <select ng-model="editVentaData.ya_pago">
+        <option value="false">No</option>
+        <option value="true">Sí</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" ng-click="showEditVentaModal=false">Cancelar</button>
+      <button class="btn-primary" ng-click="saveEditVenta()">Guardar cambios</button>
+    </div>
+  </div>
+
+  <!-- MODAL EDITAR FRAGANCIA -->
+  <div class="overlay" ng-show="showEditFragModal" ng-click="showEditFragModal=false"></div>
+  <div class="modal" ng-show="showEditFragModal" ng-click="$event.stopPropagation()">
+    <h2>Editar fragancia</h2>
+    <div class="form-group"><label>Nombre *</label><input type="text" ng-model="editFragData.nombre" /></div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Género</label>
+        <select ng-model="editFragData.genero">
+          <option value="F">Femenino</option>
+          <option value="M">Masculino</option>
+          <option value="U">Unisex</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Cantidad comprada (und)</label><input type="number"
+          ng-model="editFragData.cantidad" /></div>
+    </div>
+    <div class="form-group"><label>Precio de venta (COP)</label><input type="number"
+        ng-model="editFragData.precio_venta" /></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" ng-click="showEditFragModal=false">Cancelar</button>
+      <button class="btn-primary" ng-click="saveEditFragancia()">Guardar cambios</button>
     </div>
   </div>
 
   <script src="app.js"></script>
 </body>
+
 </html>
