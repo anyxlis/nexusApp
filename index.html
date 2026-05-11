@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="es" ng-app="nexusApp">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nexus — Agenda & Finanzas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body ng-controller="MainCtrl">
+
+  <!-- SPLASH -->
+  <div class="splash" ng-show="appLoading">
+    <div class="brand-icon">N</div>
+    <p>Cargando…</p>
+  </div>
+
+  <!-- LOGIN / REGISTRO -->
+  <div class="auth-screen" ng-show="!appLoading && !currentUser">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <div class="brand-icon">N</div>
+        <span class="brand-name">Nexus</span>
+      </div>
+      <p class="auth-tagline">Tu agenda y finanzas, en un solo lugar.</p>
+
+      <div class="auth-tabs">
+        <button ng-class="{'active': authMode==='login'}" ng-click="authMode='login'; authError=''">Iniciar sesión</button>
+        <button ng-class="{'active': authMode==='register'}" ng-click="authMode='register'; authError=''">Crear cuenta</button>
+      </div>
+
+      <div ng-show="authMode==='login'" class="auth-form">
+        <div class="form-group">
+          <label>Usuario</label>
+          <input type="text" ng-model="authData.username" placeholder="tu_usuario" ng-keypress="authEnter($event,'login')" />
+        </div>
+        <div class="form-group">
+          <label>Contraseña</label>
+          <input type="password" ng-model="authData.password" placeholder="••••••••" ng-keypress="authEnter($event,'login')" />
+        </div>
+        <p class="auth-error" ng-show="authError">{{authError}}</p>
+        <button class="btn-primary full" ng-click="login()" ng-disabled="authLoading">
+          {{authLoading ? 'Cargando…' : 'Entrar'}}
+        </button>
+      </div>
+
+      <div ng-show="authMode==='register'" class="auth-form">
+        <div class="form-group">
+          <label>Nombre completo</label>
+          <input type="text" ng-model="authData.nombre" placeholder="Tu nombre" ng-keypress="authEnter($event,'register')" />
+        </div>
+        <div class="form-group">
+          <label>Usuario</label>
+          <input type="text" ng-model="authData.username" placeholder="elige_un_usuario" ng-keypress="authEnter($event,'register')" />
+        </div>
+        <div class="form-group">
+          <label>Contraseña</label>
+          <input type="password" ng-model="authData.password" placeholder="Mínimo 6 caracteres" ng-keypress="authEnter($event,'register')" />
+        </div>
+        <p class="auth-error" ng-show="authError">{{authError}}</p>
+        <button class="btn-primary full" ng-click="register()" ng-disabled="authLoading">
+          {{authLoading ? 'Creando…' : 'Crear cuenta'}}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- APP PRINCIPAL -->
+  <div class="app-layout" ng-show="!appLoading && currentUser">
+
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">N</div>
+        <span class="brand-name">Nexus</span>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-item" ng-class="{'active': activeView==='agenda'}" ng-click="setView('agenda')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          <span>Agenda</span>
+        </button>
+        <button class="nav-item" ng-class="{'active': activeView==='semana'}" ng-click="setView('semana')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M12 2v4M16 2v4"/></svg>
+          <span>Semana</span>
+        </button>
+        <button class="nav-item" ng-class="{'active': activeView==='tareas'}" ng-click="setView('tareas')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          <span>Tareas</span>
+        </button>
+        <button class="nav-item" ng-class="{'active': activeView==='finanzas'}" ng-click="setView('finanzas')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 12h8M12 8v8"/></svg>
+          <span>Finanzas</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="user-pill">
+          <div class="user-avatar">{{currentUser && currentUser.nombre ? currentUser.nombre[0].toUpperCase() : 'U'}}</div>
+          <div class="user-info">
+            <span class="user-name">{{currentUser.nombre}}</span>
+            <span class="user-handle">@{{currentUser.username}}</span>
+          </div>
+        </div>
+        <button class="btn-logout" ng-click="logout()" title="Cerrar sesión">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <!-- Toast -->
+      <div class="toast" ng-show="toast.show" ng-class="'toast-'+toast.type">{{toast.msg}}</div>
+
+      <!-- AGENDA DIARIA -->
+      <section ng-show="activeView==='agenda'" class="view-section">
+        <header class="view-header">
+          <div>
+            <h1>Agenda</h1>
+            <p class="subtitle">{{selectedDate | date:'EEEE, d \'de\' MMMM yyyy'}}</p>
+          </div>
+          <button class="btn-primary" ng-click="openEventModal(null)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="15" height="15"><path d="M12 5v14M5 12h14"/></svg>
+            Nuevo evento
+          </button>
+        </header>
+
+        <div class="week-strip">
+          <button class="week-day"
+            ng-repeat="d in weekDays"
+            ng-class="{'selected': isSameDay(d.date, selectedDate), 'today': isSameDay(d.date, today)}"
+            ng-click="selectDate(d.date)">
+            <span class="wd-name">{{d.date | date:'EEE'}}</span>
+            <span class="wd-num">{{d.date | date:'d'}}</span>
+            <span class="wd-dot" ng-if="hasEventsOn(d.date)"></span>
+          </button>
+        </div>
+
+        <div class="loading-row" ng-show="loadingEvents">
+          <div class="spinner"></div><span>Cargando…</span>
+        </div>
+
+        <div class="timeline" ng-show="!loadingEvents">
+          <div class="timeline-empty" ng-if="eventsForDay(selectedDate).length === 0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" width="40" height="40"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            <p>Sin eventos para este día</p>
+            <button class="btn-ghost" ng-click="openEventModal(null)">+ Añadir evento</button>
+          </div>
+
+          <div class="event-card" ng-repeat="ev in eventsForDay(selectedDate) | orderBy:'hora_inicio'" ng-class="'cat-'+ev.categoria" ng-click="openEventModal(ev)">
+            <div class="ev-time">
+              <span class="ev-hour">{{formatHour(ev.hora_inicio)}}</span>
+              <span class="ev-end" ng-if="ev.hora_fin">{{formatHour(ev.hora_fin)}}</span>
+            </div>
+            <div class="ev-bar"></div>
+            <div class="ev-body">
+              <p class="ev-title">{{ev.titulo}}</p>
+              <p class="ev-desc" ng-if="ev.descripcion">{{ev.descripcion}}</p>
+              <span class="tag">{{categories[ev.categoria] ? categories[ev.categoria].label : ev.categoria}}</span>
+            </div>
+            <button class="ev-delete" ng-click="deleteEvent(ev, $event)" title="Eliminar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- VISTA SEMANAL -->
+      <section ng-show="activeView==='semana'" class="view-section">
+        <header class="view-header">
+          <div>
+            <h1>Vista semanal</h1>
+            <p class="subtitle">{{weekDays[0].date | date:'d MMM'}} — {{weekDays[6].date | date:'d MMM yyyy'}}</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn-ghost" ng-click="prevWeek()">← Anterior</button>
+            <button class="btn-ghost" ng-click="goToday()">Hoy</button>
+            <button class="btn-ghost" ng-click="nextWeek()">Siguiente →</button>
+            <button class="btn-primary" ng-click="openEventModal(null)">+ Evento</button>
+          </div>
+        </header>
+
+        <!-- Leyenda -->
+        <div class="cat-legend">
+          <span class="legend-item" ng-repeat="(k,v) in categories">
+            <span class="legend-dot" ng-style="{'background': v.color}"></span>{{v.label}}
+          </span>
+        </div>
+
+        <div class="loading-row" ng-show="loadingEvents">
+          <div class="spinner"></div><span>Cargando…</span>
+        </div>
+
+        <div class="week-grid-wrap" ng-show="!loadingEvents">
+          <div class="week-grid">
+            <!-- Horas -->
+            <div class="wg-hours">
+              <div class="wg-corner"></div>
+              <div class="wg-hour-cell" ng-repeat="h in gridHours">{{h | number:0}}:00</div>
+            </div>
+            <!-- Días -->
+            <div class="wg-day-col" ng-repeat="d in weekDays" ng-class="{'wg-today': isSameDay(d.date, today)}">
+              <div class="wg-day-header" ng-click="selectDate(d.date); setView('agenda')">
+                <span class="wgdh-name">{{d.date | date:'EEE'}}</span>
+                <span class="wgdh-num" ng-class="{'wgdh-today': isSameDay(d.date, today)}">{{d.date | date:'d'}}</span>
+              </div>
+              <div class="wg-body" ng-style="{'height': gridHours.length * cellH + 'px'}" ng-click="clickCell(d.date, $event)">
+                <div class="wg-hline" ng-repeat="h in gridHours" ng-style="{'top': $index * cellH + 'px'}"></div>
+                <div class="wg-block"
+                     ng-repeat="ev in eventsForDay(d.date)"
+                     ng-style="blockStyle(ev)"
+                     ng-class="'cat-block-'+ev.categoria"
+                     ng-click="openEventModal(ev); $event.stopPropagation()"
+                     title="{{ev.titulo}} {{formatHour(ev.hora_inicio)}}">
+                  <span class="wg-block-title">{{ev.titulo}}</span>
+                  <span class="wg-block-time">{{formatHour(ev.hora_inicio)}}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAREAS -->
+      <section ng-show="activeView==='tareas'" class="view-section">
+        <header class="view-header">
+          <div>
+            <h1>Tareas</h1>
+            <p class="subtitle">{{pendingTasks()}} pendientes · {{doneTasks()}} completadas</p>
+          </div>
+        </header>
+
+        <div class="loading-row" ng-show="loadingTasks">
+          <div class="spinner"></div><span>Cargando tareas…</span>
+        </div>
+
+        <div ng-show="!loadingTasks">
+          <div class="filter-tabs" style="margin-bottom:1.2rem">
+            <button ng-class="{'active': taskFilter==='todas'}" ng-click="taskFilter='todas'">Todas</button>
+            <button ng-class="{'active': taskFilter==='pendientes'}" ng-click="taskFilter='pendientes'">Pendientes</button>
+            <button ng-class="{'active': taskFilter==='hechas'}" ng-click="taskFilter='hechas'">Completadas</button>
+          </div>
+
+          <div class="task-list">
+            <div class="task-empty" ng-if="filteredTasks().length === 0">
+              <p>Sin tareas aquí todavía.</p>
+            </div>
+            <div class="task-item" ng-repeat="t in filteredTasks() | orderBy:['-completada','creado_en']" ng-class="{'done': t.completada}">
+              <button class="task-check" ng-click="toggleTask(t)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><path d="M20 6L9 17l-5-5"/></svg>
+              </button>
+              <span class="task-text">{{t.texto}}</span>
+              <span class="task-date" ng-if="t.fecha_limite">{{t.fecha_limite | date:'d MMM'}}</span>
+              <span class="task-pri" ng-class="'pri-'+t.prioridad">{{t.prioridad}}</span>
+              <button class="task-del" ng-click="deleteTask(t)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+              </button>
+            </div>
+
+            <div class="add-task-row">
+              <input type="text" placeholder="Nueva tarea…" ng-model="newTask.texto" ng-keypress="addTaskEnter($event)" class="task-input" />
+              <select ng-model="newTask.prioridad" class="task-select">
+                <option value="alta">Alta</option>
+                <option value="media">Media</option>
+                <option value="baja">Baja</option>
+              </select>
+              <input type="date" ng-model="newTask.fecha_limite" class="task-select" style="width:140px" />
+              <button class="btn-ghost" ng-click="addTask()" ng-disabled="!newTask.texto">Añadir</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FINANZAS -->
+      <section ng-show="activeView==='finanzas'" class="view-section">
+        <header class="view-header">
+          <div>
+            <h1>Finanzas</h1>
+            <p class="subtitle">Control de ingresos y gastos del mes</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn-income" ng-click="openTransModal('ingreso')">+ Ingreso</button>
+            <button class="btn-expense" ng-click="openTransModal('gasto')">+ Gasto</button>
+          </div>
+        </header>
+
+        <div class="loading-row" ng-show="loadingTrans">
+          <div class="spinner"></div><span>Cargando…</span>
+        </div>
+
+        <div ng-show="!loadingTrans">
+          <div class="kpi-row">
+            <div class="kpi-card kpi-income">
+              <span class="kpi-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="20" height="20"><path d="M12 20V4m-7 7l7-7 7 7"/></svg>
+              </span>
+              <div><p class="kpi-label">Ingresos</p><p class="kpi-value">${{totalIncome() | number}}</p></div>
+            </div>
+            <div class="kpi-card kpi-expense">
+              <span class="kpi-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="20" height="20"><path d="M12 4v16m7-7l-7 7-7-7"/></svg>
+              </span>
+              <div><p class="kpi-label">Gastos</p><p class="kpi-value">${{totalExpense() | number}}</p></div>
+            </div>
+            <div class="kpi-card" ng-class="balance()>=0 ? 'kpi-balance' : 'kpi-neg'">
+              <span class="kpi-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="20" height="20"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+              </span>
+              <div><p class="kpi-label">Balance</p><p class="kpi-value">${{balance() | number}}</p></div>
+            </div>
+            <div class="kpi-card kpi-savings">
+              <span class="kpi-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="20" height="20"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 11 5.5c0 1 .23 2.23 1 3.5"/><path d="M5.88 15l-1.76-5.58A2 2 0 0 1 6 7h12a2 2 0 0 1 1.88 2.42L18 15"/><path d="M12 15v7m-3-3h6"/></svg>
+              </span>
+              <div><p class="kpi-label">Tasa ahorro</p><p class="kpi-value">{{savingsRate()}}%</p></div>
+            </div>
+          </div>
+
+          <div class="budget-track" ng-if="totalIncome()>0">
+            <div class="bt-label"><span>Gasto vs ingreso</span><span>{{spentPct()}}%</span></div>
+            <div class="bt-bar">
+              <div class="bt-fill" ng-style="{'width': spentPct()+'%'}" ng-class="{'bt-warn':spentPct()>75,'bt-danger':spentPct()>100}"></div>
+            </div>
+          </div>
+
+          <div class="filter-tabs">
+            <button ng-class="{'active': transFilter==='todos'}" ng-click="transFilter='todos'">Todos</button>
+            <button ng-class="{'active': transFilter==='ingreso'}" ng-click="transFilter='ingreso'">Ingresos</button>
+            <button ng-class="{'active': transFilter==='gasto'}" ng-click="transFilter='gasto'">Gastos</button>
+          </div>
+
+          <div class="trans-list">
+            <div class="trans-empty" ng-if="filteredTrans().length===0"><p>Sin movimientos registrados</p></div>
+            <div class="trans-item" ng-repeat="t in filteredTrans() | orderBy:'-fecha'">
+              <div class="trans-ico">{{categoryIcon(t.categoria)}}</div>
+              <div class="trans-info">
+                <p class="trans-desc">{{t.descripcion}}</p>
+                <span class="trans-cat">{{t.categoria}}</span>
+                <span class="trans-date">· {{t.fecha | date:'dd MMM yyyy'}}</span>
+              </div>
+              <div class="trans-amount" ng-class="t.tipo==='ingreso'?'amt-inc':'amt-exp'">
+                {{t.tipo==='ingreso'?'+':'-'}}${{t.monto | number}}
+              </div>
+              <button class="trans-del" ng-click="deleteTrans(t)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="section-divider"><span>Gastos por categoría</span></div>
+          <div class="cat-breakdown">
+            <div class="cat-empty" ng-if="totalExpense()===0">Sin gastos aún</div>
+            <div class="cat-bar-row" ng-repeat="(cat, amt) in expenseByCategory()">
+              <span class="cat-name">{{cat}}</span>
+              <div class="cat-bar-wrap">
+                <div class="cat-bar-fill" ng-style="{'width': (amt/totalExpense()*100)+'%'}"></div>
+              </div>
+              <span class="cat-amt">${{amt | number}}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- MODAL EVENTO RÁPIDO -->
+  <div class="overlay" ng-show="showEventModal" ng-click="closeEventModal()"></div>
+  <div class="modal modal-quick" ng-show="showEventModal && !showFullForm">
+    <div class="quick-header">
+      <div class="quick-cat-dots">
+        <button class="qcat-btn" ng-repeat="(k,v) in categories"
+          ng-class="{'qcat-active': newEvent.categoria === k}"
+          ng-style="{'--cc': v.color}"
+          ng-click="newEvent.categoria = k"
+          title="{{v.label}}"></button>
+      </div>
+      <button class="btn-ghost" style="font-size:.75rem;padding:.3rem .6rem" ng-click="showFullForm=true">+ Detalles</button>
+    </div>
+
+    <input class="quick-title-input" type="text"
+      ng-model="newEvent.titulo"
+      placeholder="¿Qué vas a hacer?"
+      ng-keypress="quickSaveEnter($event)"
+      autofocus />
+
+    <div class="quick-time-row">
+      <span class="quick-date-lbl">{{newEvent.fecha | date:'EEE d MMM'}}</span>
+      <input type="time" ng-model="newEvent.hora_inicio" class="quick-time" />
+      <span class="quick-sep">→</span>
+      <input type="time" ng-model="newEvent.hora_fin" class="quick-time" />
+    </div>
+
+    <div class="quick-actions">
+      <button class="btn-ghost" ng-click="closeEventModal()">Cancelar</button>
+      <button class="btn-danger-sm" ng-show="editingEvent" ng-click="deleteEvent(editingEvent, null); closeEventModal()">Eliminar</button>
+      <button class="btn-primary" ng-click="saveEvent()" ng-disabled="savingEvent || !newEvent.titulo">
+        {{savingEvent ? '…' : (editingEvent ? 'Actualizar' : 'Guardar')}}
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL EVENTO COMPLETO -->
+  <div class="overlay" ng-show="showEventModal && showFullForm" ng-click="closeEventModal()"></div>
+  <div class="modal" ng-show="showEventModal && showFullForm">
+    <h2>{{editingEvent ? 'Editar evento' : 'Nuevo evento'}}</h2>
+    <div class="form-group">
+      <label>Título *</label>
+      <input type="text" ng-model="newEvent.titulo" placeholder="Reunión, clase, cita…" />
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Fecha</label>
+        <input type="date" ng-model="newEvent.fecha" />
+      </div>
+      <div class="form-group">
+        <label>Categoría</label>
+        <select ng-model="newEvent.categoria">
+          <option ng-repeat="(k,v) in categories" value="{{k}}">{{v.label}}</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Hora inicio</label>
+        <input type="time" ng-model="newEvent.hora_inicio" />
+      </div>
+      <div class="form-group">
+        <label>Hora fin</label>
+        <input type="time" ng-model="newEvent.hora_fin" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Descripción</label>
+      <textarea ng-model="newEvent.descripcion" placeholder="Detalles opcionales…" rows="2"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" ng-click="showFullForm=false">← Volver</button>
+      <button class="btn-danger-sm" ng-show="editingEvent" ng-click="deleteEvent(editingEvent, null); closeEventModal()">Eliminar</button>
+      <button class="btn-primary" ng-click="saveEvent()" ng-disabled="savingEvent">
+        {{savingEvent ? 'Guardando…' : (editingEvent ? 'Actualizar' : 'Guardar')}}
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL TRANSACCIÓN -->
+  <div class="overlay" ng-show="showTransModal" ng-click="closeTransModal()"></div>
+  <div class="modal" ng-show="showTransModal">
+    <h2>{{newTrans.tipo==='ingreso' ? 'Nuevo ingreso' : 'Nuevo gasto'}}</h2>
+    <div class="form-group">
+      <label>Descripción *</label>
+      <input type="text" ng-model="newTrans.descripcion" placeholder="Ej: Salario, Mercado…" />
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Monto *</label>
+        <input type="number" ng-model="newTrans.monto" placeholder="0" min="0" />
+      </div>
+      <div class="form-group">
+        <label>Fecha</label>
+        <input type="date" ng-model="newTrans.fecha" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Categoría</label>
+      <select ng-model="newTrans.categoria">
+        <optgroup label="Ingresos" ng-if="newTrans.tipo==='ingreso'">
+          <option value="Salario">Salario</option>
+          <option value="Freelance">Freelance</option>
+          <option value="Inversión">Inversión</option>
+          <option value="Regalo">Regalo</option>
+          <option value="Otros">Otros</option>
+        </optgroup>
+        <optgroup label="Gastos" ng-if="newTrans.tipo==='gasto'">
+          <option value="Alimentación">Alimentación</option>
+          <option value="Transporte">Transporte</option>
+          <option value="Vivienda">Vivienda</option>
+          <option value="Salud">Salud</option>
+          <option value="Entretenimiento">Entretenimiento</option>
+          <option value="Ropa">Ropa</option>
+          <option value="Educación">Educación</option>
+          <option value="Servicios">Servicios</option>
+          <option value="Otros">Otros</option>
+        </optgroup>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" ng-click="closeTransModal()">Cancelar</button>
+      <button class="btn-primary" ng-click="saveTrans()" ng-disabled="savingTrans">
+        {{savingTrans ? 'Guardando…' : 'Guardar'}}
+      </button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
