@@ -1192,8 +1192,8 @@
       <div class="ing-row" ng-repeat="item in newVenta.items">
         <select class="ing-sel" ng-model="item.fragancia_id" ng-change="onFraganciaSelect(item)">
           <option value="">— Selecciona fragancia —</option>
-          <option ng-repeat="r in recetas" value="{{r.id}}" ng-disabled="r.stock <= 0">
-            {{r.nombre}} (Stock: {{r.stock}})
+          <option ng-repeat="f in fragancias" value="{{f.id}}" ng-disabled="f.stock <= 0">
+            {{f.nombre}} (Stock: {{f.stock}})
           </option>
         </select>
         <input type="number" class="ing-qty" ng-model="item.cantidad" min="1" ng-max="getStock(item.fragancia_id)"
