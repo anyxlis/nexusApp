@@ -40,7 +40,7 @@ function sbDelete(table, filter) {
   });
 }
 
-// ── Simple hash (no crypto API needed for demo; use bcrypt server-side in prod) ──
+// ── Simple hash ──
 function simpleHash(str) {
   var h = 0;
   for (var i = 0; i < str.length; i++) {
@@ -88,9 +88,9 @@ angular.module('nexusApp', [])
     'Entretenimiento':'🎬','Ropa':'👕','Educación':'📚','Servicios':'⚡','Otros':'📦'
   };
 
-  $scope.cellH   = 60;   // px por hora en la grilla
-  $scope.gridStart = 6;  // hora inicio grilla (6am)
-  $scope.gridEnd   = 23; // hora fin grilla (11pm)
+  $scope.cellH    = 60;
+  $scope.gridStart = 6;
+  $scope.gridEnd   = 23;
   $scope.gridHours = [];
   for (var h = $scope.gridStart; h < $scope.gridEnd; h++) $scope.gridHours.push(h);
 
@@ -148,24 +148,28 @@ angular.module('nexusApp', [])
   $scope.savingTrans    = false;
   $scope.newTask        = { texto: '', prioridad: 'media', fecha_limite: '' };
 
+  // Historial meses
+  $scope.historialMeses      = [];
+  $scope.loadingHistorial    = false;
+  $scope.showHistorialDetail = false;
+  $scope.mesDetalle          = null;
+  $scope.showCerrarMesModal  = false;
+  $scope.cerrarMesLabel      = '';
+  $scope.savingCierre        = false;
+
   // ── Toast ─────────────────────────────────────────────
   function showToast(msg, type) {
     $scope.toast = { show: true, msg: msg, type: type || 'ok' };
     $timeout(function() { $scope.toast.show = false; }, 3000);
   }
 
-  // ── Session (localStorage) ────────────────────────────
+  // ── Session ───────────────────────────────────────────
   function saveSession(user) {
     try { localStorage.setItem('nexus_user', JSON.stringify(user)); } catch(e) {}
   }
-
   function loadSession() {
-    try {
-      var raw = localStorage.getItem('nexus_user');
-      return raw ? JSON.parse(raw) : null;
-    } catch(e) { return null; }
+    try { var raw = localStorage.getItem('nexus_user'); return raw ? JSON.parse(raw) : null; } catch(e) { return null; }
   }
-
   function clearSession() {
     try { localStorage.removeItem('nexus_user'); } catch(e) {}
   }
@@ -258,6 +262,7 @@ angular.module('nexusApp', [])
     $scope.events       = [];
     $scope.tasks        = [];
     $scope.transactions = [];
+    $scope.historialMeses = [];
     $scope.authData     = {};
     $scope.authMode     = 'login';
   };
@@ -280,7 +285,6 @@ angular.module('nexusApp', [])
   $scope.goToday   = function() { $scope.weekOffset = 0; buildWeek(); $scope.selectedDate = new Date(); };
   $scope.selectDate = function(d) { $scope.selectedDate = new Date(d); };
 
-  // Click en celda vacia de la grilla -> abre modal con esa fecha y hora
   $scope.clickCell = function(dayDate, $event) {
     var body = $event.currentTarget;
     var rect = body.getBoundingClientRect();
@@ -318,8 +322,6 @@ angular.module('nexusApp', [])
     return $scope.events.some(function(e) { return e.fecha === iso; });
   };
 
-
-
   // ── Load all data ─────────────────────────────────────
   function loadAll() {
     loadEvents();
@@ -328,10 +330,9 @@ angular.module('nexusApp', [])
     loadFragancias();
     loadVentasNegocio();
     loadMayoristas();
-    loadVentasNegocio();
-    loadMayoristas();
     loadMateriales();
     loadRecetas();
+    _loadHistorial();
   }
 
   function loadEvents() {
@@ -383,7 +384,6 @@ angular.module('nexusApp', [])
     $scope.showFullForm = false;
     if (ev) {
       $scope.newEvent = angular.copy(ev);
-      // Supabase devuelve HH:MM:SS — recortar a HH:MM para input[type=time]
       if ($scope.newEvent.hora_inicio) $scope.newEvent.hora_inicio = $scope.newEvent.hora_inicio.substring(0,5);
       if ($scope.newEvent.hora_fin)    $scope.newEvent.hora_fin    = $scope.newEvent.hora_fin.substring(0,5);
       if (!$scope.newEvent.hora_inicio) $scope.newEvent.hora_inicio = '09:00';
@@ -397,8 +397,6 @@ angular.module('nexusApp', [])
         titulo: '',
         descripcion: ''
       };
-      $scope.newEvent.hora_inicio = $scope.newEvent.hora_inicio || '09:00';
-      $scope.newEvent.hora_fin    = $scope.newEvent.hora_fin    || '10:00';
     }
     $scope.showEventModal = true;
     $timeout(function() {
@@ -429,22 +427,17 @@ angular.module('nexusApp', [])
       hora_fin: $scope.newEvent.hora_fin || null,
       categoria: $scope.newEvent.categoria || 'otro'
     };
-
-    var promise;
-    if ($scope.editingEvent) {
-      promise = sbPatch('eventos', 'id=eq.' + $scope.editingEvent.id, body);
-    } else {
-      promise = sbPost('eventos', body);
-    }
-
+    var promise = $scope.editingEvent
+      ? sbPatch('eventos', 'id=eq.' + $scope.editingEvent.id, body)
+      : sbPost('eventos', body);
     promise.then(function() {
       $timeout(function() {
-        var wasEditingEv = !!$scope.editingEvent;
+        var wasEditing = !!$scope.editingEvent;
         $scope.savingEvent = false;
         $scope.showEventModal = false;
         $scope.editingEvent = null;
         loadEvents();
-        showToast(wasEditingEv ? 'Evento actualizado ✓' : 'Evento guardado ✓');
+        showToast(wasEditing ? 'Evento actualizado ✓' : 'Evento guardado ✓');
       });
     }).catch(function() {
       $timeout(function() { $scope.savingEvent = false; showToast('Error al guardar', 'err'); });
@@ -458,7 +451,6 @@ angular.module('nexusApp', [])
     });
   };
 
-  // ── Weekly grid block position ────────────────────────
   $scope.blockStyle = function(ev) {
     if (!ev.hora_inicio) return { top: '0px', height: '20px' };
     var start = timeToMinutes(ev.hora_inicio);
@@ -532,8 +524,9 @@ angular.module('nexusApp', [])
   };
 
   $scope.toggleTask = function(t) {
-    sbPatch('tareas', 'id=eq.' + t.id, { completada: !t.completada }).then(function() {
-      $timeout(function() { t.completada = !t.completada; });
+    var nuevoValor = !t.completada;
+    sbPatch('tareas', 'id=eq.' + t.id, { completada: nuevoValor }).then(function() {
+      $timeout(function() { loadTasks(); });
     });
   };
 
@@ -552,6 +545,7 @@ angular.module('nexusApp', [])
   $scope.spentPct     = function() { var i=$scope.totalIncome(); return i ? Math.min(Math.round($scope.totalExpense()/i*100),100) : 0; };
 
   $scope.filteredTrans = function() {
+    if ($scope.transFilter === 'historial') return [];
     if ($scope.transFilter === 'todos') return $scope.transactions;
     return $scope.transactions.filter(function(t) { return t.tipo === $scope.transFilter; });
   };
@@ -656,6 +650,97 @@ angular.module('nexusApp', [])
     });
   };
 
+  // ── HISTORIAL DE MESES ────────────────────────────────
+
+  function _loadHistorial() {
+    if (!$scope.currentUser) return;
+    $scope.loadingHistorial = true;
+    sbGet('historial_meses', {
+      usuario_id: 'eq.' + $scope.currentUser.id,
+      select: '*',
+      order: 'creado_en.desc'
+    }).then(function(rows) {
+      $timeout(function() {
+        $scope.historialMeses = rows || [];
+        $scope.loadingHistorial = false;
+      });
+    }).catch(function() { $timeout(function() { $scope.loadingHistorial = false; }); });
+  }
+
+  $scope.loadHistorial = function() { _loadHistorial(); };
+
+  $scope.openCerrarMesModal = function() {
+    var now = new Date();
+    var meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                 'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    $scope.cerrarMesLabel = meses[now.getMonth()] + ' ' + now.getFullYear();
+    $scope.showCerrarMesModal = true;
+  };
+
+  $scope.cerrarMes = function() {
+    if (!$scope.cerrarMesLabel || $scope.savingCierre) return;
+    $scope.savingCierre = true;
+    var ingresos = $scope.totalIncome();
+    var gastos   = $scope.totalExpense();
+    var balance  = $scope.balance();
+    var ahorro   = $scope.savingsRate();
+
+    sbPost('historial_meses', {
+      usuario_id:         $scope.currentUser.id,
+      mes_label:          $scope.cerrarMesLabel,
+      ingresos:           ingresos,
+      gastos:             gastos,
+      balance:            balance,
+      tasa_ahorro:        ahorro,
+      transacciones_json: $scope.transactions
+    }).then(function() {
+      return sbDelete('transacciones', 'usuario_id=eq.' + $scope.currentUser.id);
+    }).then(function() {
+      $timeout(function() {
+        $scope.savingCierre = false;
+        $scope.showCerrarMesModal = false;
+        $scope.transactions = [];
+        $scope.transFilter = 'historial';
+        _loadHistorial();
+        showToast('✓ Mes cerrado y guardado');
+      });
+    }).catch(function() {
+      $timeout(function() {
+        $scope.savingCierre = false;
+        showToast('Error al cerrar mes', 'err');
+      });
+    });
+  };
+
+  $scope.verMesDetalle = function(mes) {
+    $scope.mesDetalle = angular.copy(mes);
+    try {
+      var raw = mes.transacciones_json;
+      $scope.mesDetalle._trans = Array.isArray(raw) ? raw : (typeof raw === 'string' ? JSON.parse(raw) : []);
+    } catch(e) { $scope.mesDetalle._trans = []; }
+    $scope.mesDetalle._totalInc = $scope.mesDetalle._trans
+      .filter(function(t){ return t.tipo==='ingreso'; })
+      .reduce(function(s,t){ return s+(+t.monto||0); }, 0);
+    $scope.mesDetalle._totalGas = $scope.mesDetalle._trans
+      .filter(function(t){ return t.tipo==='gasto'; })
+      .reduce(function(s,t){ return s+(+t.monto||0); }, 0);
+    $scope.showHistorialDetail = true;
+  };
+
+  $scope.deleteHistorial = function(mes, $event) {
+    if ($event) $event.stopPropagation();
+    if (!confirm('¿Eliminar el historial de ' + mes.mes_label + '?')) return;
+    sbDelete('historial_meses', 'id=eq.' + mes.id)
+      .then(function() { $timeout(function() { _loadHistorial(); showToast('Historial eliminado'); }); });
+  };
+
+  $scope.catIconH = function(cat) { return CAT_ICONS[cat] || '💰'; };
+
+  $scope.histSpentPct = function(mes) {
+    if (!mes || !mes.ingresos || +mes.ingresos === 0) return 0;
+    return Math.min(Math.round((+mes.gastos / +mes.ingresos) * 100), 100);
+  };
+
   // ── NEGOCIO FRAGANCIAS ────────────────────────────────
 
   function loadFragancias() {
@@ -685,7 +770,6 @@ angular.module('nexusApp', [])
       }).catch(function() { $timeout(function() { $scope.loadingMayoristas = false; }); });
   }
 
-  // ya_pago puede venir como boolean true o string "true" desde Supabase — normalizar siempre
   function isPagado(v) { return v.ya_pago === true || v.ya_pago === 'true'; }
 
   $scope.totalVendido    = function() { return $scope.ventasNegocio.reduce(function(s,v) { return s+(+v.valor_total||0); }, 0); };
@@ -698,7 +782,7 @@ angular.module('nexusApp', [])
     return $scope.ventasNegocio.filter(function(v){ return !isPagado(v); })
       .reduce(function(s,v){ return s+((+v.valor_total||0)-(+v.abono||0)); }, 0);
   };
-  $scope.capitalInvertido = function() { return $scope.fragancias.reduce(function(s,f){return s+(+f.precio_costo||0)*(+f.stock||0);},0); };
+  $scope.capitalInvertido = function() { return ($scope.fragancias||[]).reduce(function(s,f){return s+(+f.precio_costo||0)*(+f.stock||0);},0); };
   $scope.gananciasNetas  = function() { return $scope.totalRecibido() - $scope.capitalInvertido(); };
   $scope.rentabilidad    = function() { var c=$scope.capitalInvertido(); return c?Math.round($scope.gananciasNetas()/c*100):0; };
   $scope.clientesPagaron  = function() { return $scope.ventasNegocio.filter(function(v){ return isPagado(v); }).length; };
@@ -712,7 +796,6 @@ angular.module('nexusApp', [])
   };
 
   $scope.openVentaModal = function() {
-    // Recargar fragancias antes de abrir para tener stock actualizado
     loadFragancias();
     $scope.newVenta = { cliente:'', valor_total:0, abono:0, fecha:toISO(new Date()), ya_pago:'false', items:[] };
     $scope.showVentaModal = true;
@@ -722,7 +805,6 @@ angular.module('nexusApp', [])
     sbPatch('ventas_negocio', 'id=eq.' + v.id, { ya_pago: true, abono: +v.valor_total })
       .then(function() {
         $timeout(function() {
-          // Actualizar localmente de inmediato para que el resumen refleje el cambio
           v.ya_pago = true;
           v.abono   = +v.valor_total;
           loadVentasNegocio();
@@ -735,7 +817,7 @@ angular.module('nexusApp', [])
   $scope.removeVentaItem = function(idx) { $scope.newVenta.items.splice(idx,1); $scope.recalcularTotal(); };
 
   $scope.getFragancia = function(id) {
-    return $scope.fragancias.find(function(f){ return f.id === id; }) || null;
+    return ($scope.fragancias||[]).find(function(f){ return f.id === id; }) || null;
   };
   $scope.getStock = function(id) {
     var f = $scope.getFragancia(id);
@@ -773,20 +855,18 @@ angular.module('nexusApp', [])
         var f = $scope.getFragancia(i.fragancia_id);
         return f.nombre + (i.cantidad > 1 ? ' x' + i.cantidad : '');
       }).join(', ');
-
     sbPost('ventas_negocio',{
       usuario_id:$scope.currentUser.id, cliente:$scope.newVenta.cliente,
       cantidad:$scope.totalUnidadesVenta()||1, valor_total:+$scope.newVenta.valor_total,
       abono:abono, ya_pago:yaPago, fragancias_desc:desc, fecha:$scope.newVenta.fecha
     }).then(function() {
-      // Descontar stock
       var stockPromises = ($scope.newVenta.items||[])
         .filter(function(i){ return i.fragancia_id && +i.cantidad > 0; })
         .map(function(i){
           var f = $scope.getFragancia(i.fragancia_id);
           if (!f) return Promise.resolve();
           var nuevoStock = Math.max(0, (+f.stock || 0) - +i.cantidad);
-          f.stock = nuevoStock; // actualizar localmente
+          f.stock = nuevoStock;
           return sbPatch('fragancias', 'id=eq.' + f.id, { stock: nuevoStock });
         });
       Promise.all(stockPromises).then(function(){
@@ -815,21 +895,14 @@ angular.module('nexusApp', [])
       .then(function(){$timeout(function(){loadVentasNegocio();showToast('Venta eliminada');});});
   };
 
-  // Editar venta
   $scope.editVentaData = {}; $scope.showEditVentaModal = false; $scope.editingVenta = null;
 
   $scope.openEditVenta = function(v) {
     $scope.editingVenta = v;
     $scope.editVentaData = angular.copy(v);
-
-    // Normalizar fecha — siempre forzar string YYYY-MM-DD
     var rawFecha = v.fecha || v.creado_en || '';
     $scope.editVentaData.fecha = rawFecha ? String(rawFecha).substring(0, 10) : toISO(new Date());
-
-    // Normalizar ya_pago a string para el <select>
     $scope.editVentaData.ya_pago = ($scope.editVentaData.ya_pago === true || $scope.editVentaData.ya_pago === 'true') ? 'true' : 'false';
-
-    // Pre-cargar items desde fragancias_desc
     $scope.editVentaData.items = [];
     if (v.fragancias_desc && v.fragancias_desc.indexOf('?') === -1 && v.fragancias_desc.trim() !== '') {
       var partes = v.fragancias_desc.split(', ');
@@ -843,23 +916,18 @@ angular.module('nexusApp', [])
           nombre   = parte.trim();
           cantidad = 1;
         }
-        var frag = $scope.fragancias.find(function(f) {
+        var frag = ($scope.fragancias||[]).find(function(f) {
           return f.nombre.toLowerCase() === nombre.toLowerCase();
         });
-        $scope.editVentaData.items.push({
-          fragancia_id: frag ? frag.id : '',
-          cantidad: cantidad
-        });
+        $scope.editVentaData.items.push({ fragancia_id: frag ? frag.id : '', cantidad: cantidad });
       });
     }
-
-    // Si no hay items cargados, agregar una fila vacía para facilitar
     if ($scope.editVentaData.items.length === 0) {
       $scope.editVentaData.items.push({ fragancia_id: '', cantidad: 1 });
     }
-
     $scope.showEditVentaModal = true;
   };
+
   $scope.recalcularTotalEdit = function() {
     var total = ($scope.editVentaData.items||[]).reduce(function(s,item){
       return s + $scope.getPrecioItem(item);
@@ -877,13 +945,13 @@ angular.module('nexusApp', [])
     var cantTotal = items.reduce(function(s,i){return s+(+i.cantidad||0);},0) || +$scope.editVentaData.cantidad || 1;
     var yaPago = $scope.editVentaData.ya_pago===true||$scope.editVentaData.ya_pago==='true';
     sbPatch('ventas_negocio','id=eq.'+$scope.editingVenta.id,{
-      cliente:         $scope.editVentaData.cliente,
-      cantidad:        cantTotal,
-      valor_total:     +$scope.editVentaData.valor_total,
-      abono:           +$scope.editVentaData.abono,
-      ya_pago:         yaPago,
+      cliente: $scope.editVentaData.cliente,
+      cantidad: cantTotal,
+      valor_total: +$scope.editVentaData.valor_total,
+      abono: +$scope.editVentaData.abono,
+      ya_pago: yaPago,
       fragancias_desc: desc || '',
-      fecha:           $scope.editVentaData.fecha
+      fecha: $scope.editVentaData.fecha
     }).then(function(){
       $timeout(function(){
         $scope.showEditVentaModal=false;
@@ -894,7 +962,6 @@ angular.module('nexusApp', [])
     });
   };
 
-    // Inventario fragancias
   $scope.openFraganciaModal = function() {
     $scope.newFragancia={nombre:'',genero:'F',stock:0,precio_costo:0,precio_venta:0};
     $scope.showFraganciaModal=true;
@@ -912,7 +979,6 @@ angular.module('nexusApp', [])
     }).then(function(){$timeout(function(){$scope.showFraganciaModal=false;loadFragancias();showToast('Fragancia añadida ✓');});});
   };
 
-  // ── EDITAR FRAGANCIA (separado de abrir) ──
   $scope.editingFragancia=null; $scope.showEditFragModal=false; $scope.editFragData={};
   $scope.openEditFragancia = function(f) {
     $scope.editingFragancia = f;
@@ -922,11 +988,11 @@ angular.module('nexusApp', [])
   $scope.saveEditFragancia = function() {
     if (!$scope.editingFragancia) return;
     sbPatch('fragancias','id=eq.'+$scope.editingFragancia.id,{
-      nombre:      $scope.editFragData.nombre,
-      genero:      $scope.editFragData.genero,
-      stock:       +$scope.editFragData.stock || 0,
-      cantidad:    +$scope.editFragData.cantidad || 0,
-      precio_venta:+$scope.editFragData.precio_venta || 0
+      nombre:       $scope.editFragData.nombre,
+      genero:       $scope.editFragData.genero,
+      stock:        +$scope.editFragData.stock || 0,
+      cantidad:     +$scope.editFragData.cantidad || 0,
+      precio_venta: +$scope.editFragData.precio_venta || 0
     }).then(function(){
       $timeout(function(){
         $scope.showEditFragModal=false;
@@ -976,11 +1042,11 @@ angular.module('nexusApp', [])
       : sbPost('mayoristas', Object.assign(body, { total_pedidos: 0, fecha_inicio: toISO(new Date()) }));
     promise.then(function() {
       $timeout(function() {
-        var wasEditingMay = !!$scope.editingMayorista;
+        var wasEditing = !!$scope.editingMayorista;
         $scope.showMayoristaModal = false;
         $scope.editingMayorista = null;
         loadMayoristas();
-        showToast(wasEditingMay ? 'Revendedor actualizado ✓' : 'Revendedor registrado ✓');
+        showToast(wasEditing ? 'Revendedor actualizado ✓' : 'Revendedor registrado ✓');
       });
     });
   };
@@ -1016,7 +1082,6 @@ angular.module('nexusApp', [])
       estado: $scope.newPedidoMay.estado,
       fecha: $scope.newPedidoMay.fecha
     }).then(function() {
-      // Update total_pedidos on mayorista
       var nuevoTotal = (+$scope.pedidoMayoristaTarget.total_pedidos || 0) + total;
       sbPatch('mayoristas', 'id=eq.' + $scope.pedidoMayoristaTarget.id, { total_pedidos: nuevoTotal });
       $timeout(function() {
@@ -1061,7 +1126,6 @@ angular.module('nexusApp', [])
     return $scope.materiales.filter(function(m) { return m.categoria === $scope.matCatFilter; });
   };
 
-  // Carga materiales
   function loadMateriales() {
     if (!$scope.currentUser) return;
     $scope.loadingMat = true;
@@ -1071,7 +1135,6 @@ angular.module('nexusApp', [])
       }).catch(function() { $timeout(function() { $scope.loadingMat = false; }); });
   }
 
-  // Carga recetas con ingredientes embebidos
   function loadRecetas() {
     if (!$scope.currentUser) return;
     $scope.loadingRec = true;
@@ -1080,24 +1143,21 @@ angular.module('nexusApp', [])
         $timeout(function() {
           $scope.recetas = rows || [];
           $scope.loadingRec = false;
-          // cargar ingredientes para cada receta
           $scope.recetas.forEach(function(r) { loadIngredientesReceta(r); });
         });
       }).catch(function() { $timeout(function() { $scope.loadingRec = false; }); });
   }
 
-  // Cache de ingredientes por receta
   var ingCache = {};
-  // ingCache stores ingredientes per receta id
+
+  function safeIngCache() {
+    if (typeof ingCache !== 'object' || ingCache === null) ingCache = {};
+    return ingCache;
+  }
 
   function loadIngredientesReceta(r) {
-    sbGet('receta_ingrediente', {
-      receta_id: 'eq.' + r.id,
-      select: '*'
-    }).then(function(rows) {
-      $timeout(function() {
-        ingCache[r.id] = rows || [];
-      });
+    sbGet('receta_ingrediente', { receta_id: 'eq.' + r.id, select: '*' }).then(function(rows) {
+      $timeout(function() { safeIngCache()[r.id] = rows || []; });
     });
   }
 
@@ -1105,9 +1165,8 @@ angular.module('nexusApp', [])
     return $scope.materiales.find(function(m) { return m.id === id; }) || null;
   };
 
-  // Stock del inventario (fragancias) para una receta por nombre
   $scope.getStockInventario = function(nombre) {
-    var frag = $scope.fragancias.find(function(f) {
+    var frag = ($scope.fragancias||[]).find(function(f) {
       return f.nombre.toLowerCase() === (nombre || '').toLowerCase();
     });
     return frag ? (+frag.stock || 0) : 0;
@@ -1118,9 +1177,8 @@ angular.module('nexusApp', [])
     return m ? m.unidad : '';
   };
 
-  // Cálculos de costos por receta
   $scope.costoProduccion = function(r) {
-    var ings = (ingCache[r.id] || []).filter(function(i) {
+    var ings = (safeIngCache()[r.id] || []).filter(function(i) {
       var m = $scope.getMaterial(i.material_id);
       return m && (m.categoria === 'esencia' || m.categoria === 'feromona' || m.categoria === 'alcohol');
     });
@@ -1131,7 +1189,7 @@ angular.module('nexusApp', [])
   };
 
   $scope.costoEmpaque = function(r) {
-    var ings = (ingCache[r.id] || []).filter(function(i) {
+    var ings = (safeIngCache()[r.id] || []).filter(function(i) {
       var m = $scope.getMaterial(i.material_id);
       return m && (m.categoria === 'frasco' || m.categoria === 'empaque');
     });
@@ -1141,23 +1199,13 @@ angular.module('nexusApp', [])
     }, 0);
   };
 
-  $scope.costoTotal = function(r) {
-    return $scope.costoProduccion(r) + $scope.costoEmpaque(r);
-  };
-
-  $scope.gananciaUnitaria = function(r) {
-    return (+r.precio_venta || 0) - $scope.costoTotal(r);
-  };
-
-  $scope.gananciaTotalLote = function(r) {
-    return $scope.gananciaUnitaria(r) * (+r.stock || 0);
-  };
-
+  $scope.costoTotal = function(r) { return $scope.costoProduccion(r) + $scope.costoEmpaque(r); };
+  $scope.gananciaUnitaria = function(r) { return (+r.precio_venta || 0) - $scope.costoTotal(r); };
+  $scope.gananciaTotalLote = function(r) { return $scope.gananciaUnitaria(r) * (+r.stock || 0); };
   $scope.margenPct = function(r) {
     var venta = +r.precio_venta || 0;
     return venta > 0 ? Math.round($scope.gananciaUnitaria(r) / venta * 100) : 0;
   };
-
   $scope.margenClass = function(r) {
     var m = $scope.margenPct(r);
     if (m >= 40) return 'margen-ok';
@@ -1165,7 +1213,6 @@ angular.module('nexusApp', [])
     return 'margen-neg';
   };
 
-  // Totales generales para tabla rentabilidad
   $scope.totalCostoProduccionGeneral = function() {
     return $scope.recetas.reduce(function(s, r) { return s + $scope.costoTotal(r) * (+r.stock || 0); }, 0);
   };
@@ -1180,12 +1227,10 @@ angular.module('nexusApp', [])
     return ventas > 0 ? Math.round($scope.totalGananciaGeneral() / ventas * 100) : 0;
   };
 
-  // KPIs materiales
   $scope.totalInversionMat = function() {
     return $scope.materiales.reduce(function(s, m) { return s + (+m.precio_total || 0); }, 0);
   };
   $scope.costoEstimadoPorFrasco = function() {
-    // promedio de costos de recetas existentes
     if (!$scope.recetas.length) return 0;
     var total = $scope.recetas.reduce(function(s, r) { return s + $scope.costoTotal(r); }, 0);
     return Math.round(total / $scope.recetas.length);
@@ -1196,7 +1241,6 @@ angular.module('nexusApp', [])
     return Math.round(total / $scope.recetas.length);
   };
 
-  // CRUD Materiales
   $scope.openMatModal = function(m) {
     $scope.editingMat = m || null;
     $scope.newMat = m ? angular.copy(m) : { nombre:'', categoria:'esencia', unidad:'g', cantidad_total:0, precio_total:0, cantidad_disponible:0 };
@@ -1233,29 +1277,18 @@ angular.module('nexusApp', [])
       .then(function() { $timeout(function() { loadMateriales(); showToast('Eliminado'); }); });
   };
 
-  // CRUD Recetas
   $scope.openRecetaModal = function(r) {
     $scope.editingRec = r || null;
     if (r) {
-      $scope.newRec = {
-        id: r.id,
-        nombre: r.nombre,
-        genero: r.genero,
-        ml: r.ml,
-        precio_venta: r.precio_venta,
-        stock: r.stock,
-        ingredientes: []
-      };
-      // Cargar ingredientes existentes del cache
-      var ings = ingCache[r.id] || [];
+      $scope.newRec = { id: r.id, nombre: r.nombre, genero: r.genero, ml: r.ml, precio_venta: r.precio_venta, stock: r.stock, ingredientes: [] };
+      var ings = safeIngCache()[r.id] || [];
       $scope.newRec.ingredientes = ings.map(function(i) {
         return { material_id: i.material_id, cantidad_usada: i.cantidad_usada };
       });
-      // Si no hay cache, cargar de BD
       if (!ings.length) {
         sbGet('receta_ingrediente', { receta_id: 'eq.' + r.id, select: '*' })
           .then(function(rows) {
-            ingCache[r.id] = rows || [];
+            safeIngCache()[r.id] = rows || [];
             $scope.$apply(function() {
               $scope.newRec.ingredientes = (rows || []).map(function(i) {
                 return { material_id: i.material_id, cantidad_usada: i.cantidad_usada };
@@ -1274,9 +1307,7 @@ angular.module('nexusApp', [])
     $scope.newRec.ingredientes.push({ material_id:'', cantidad_usada:0 });
   };
 
-  $scope.removeIngrediente = function(idx) {
-    $scope.newRec.ingredientes.splice(idx, 1);
-  };
+  $scope.removeIngrediente = function(idx) { $scope.newRec.ingredientes.splice(idx, 1); };
 
   $scope.ingCosto = function(ing) {
     var m = $scope.getMaterial(ing.material_id);
@@ -1284,9 +1315,7 @@ angular.module('nexusApp', [])
   };
 
   $scope.costoTotalNueva = function() {
-    return ($scope.newRec.ingredientes || []).reduce(function(s, i) {
-      return s + $scope.ingCosto(i);
-    }, 0);
+    return ($scope.newRec.ingredientes || []).reduce(function(s, i) { return s + $scope.ingCosto(i); }, 0);
   };
 
   $scope.margenNueva = function() {
@@ -1309,11 +1338,9 @@ angular.module('nexusApp', [])
     var promise = $scope.editingRec
       ? sbPatch('receta_fragancia', 'id=eq.' + $scope.editingRec.id, body)
       : sbPost('receta_fragancia', body);
-
     promise.then(function(res) {
       var recId = $scope.editingRec ? $scope.editingRec.id : (res && res[0] ? res[0].id : null);
       if (recId && $scope.newRec.ingredientes && $scope.newRec.ingredientes.length) {
-        // Si es edición, borrar ingredientes anteriores
         var deletePromise = $scope.editingRec
           ? sbDelete('receta_ingrediente', 'receta_id=eq.' + recId)
           : Promise.resolve();
@@ -1321,11 +1348,7 @@ angular.module('nexusApp', [])
           var ingPromises = $scope.newRec.ingredientes
             .filter(function(i) { return i.material_id && i.cantidad_usada > 0; })
             .map(function(i) {
-              return sbPost('receta_ingrediente', {
-                receta_id: recId,
-                material_id: i.material_id,
-                cantidad_usada: +i.cantidad_usada
-              });
+              return sbPost('receta_ingrediente', { receta_id: recId, material_id: i.material_id, cantidad_usada: +i.cantidad_usada });
             });
           Promise.all(ingPromises).then(function() {
             $timeout(function() {
@@ -1351,27 +1374,20 @@ angular.module('nexusApp', [])
   $scope.deleteReceta = function(r) {
     if (!confirm('¿Eliminar receta de ' + r.nombre + '?')) return;
     sbDelete('receta_fragancia', 'id=eq.' + r.id)
-      .then(function() { $timeout(function() { delete ingCache[r.id]; loadRecetas(); showToast('Eliminada'); }); });
+      .then(function() { $timeout(function() { delete safeIngCache()[r.id]; loadRecetas(); showToast('Eliminada'); }); });
   };
 
   $scope.copiarReceta = function(r) {
     $scope.editingRec = null;
-    $scope.newRec = {
-      nombre: 'Copia de ' + r.nombre,
-      genero: r.genero,
-      ml: r.ml,
-      precio_venta: r.precio_venta,
-      stock: 0,
-      ingredientes: []
-    };
-    var ings = ingCache[r.id] || [];
+    $scope.newRec = { nombre: 'Copia de ' + r.nombre, genero: r.genero, ml: r.ml, precio_venta: r.precio_venta, stock: 0, ingredientes: [] };
+    var ings = safeIngCache()[r.id] || [];
     $scope.newRec.ingredientes = ings.map(function(i) {
       return { material_id: i.material_id, cantidad_usada: i.cantidad_usada };
     });
     if (!ings.length) {
       sbGet('receta_ingrediente', { receta_id: 'eq.' + r.id, select: '*' })
         .then(function(rows) {
-          ingCache[r.id] = rows || [];
+          safeIngCache()[r.id] = rows || [];
           $scope.$apply(function() {
             $scope.newRec.ingredientes = (rows || []).map(function(i) {
               return { material_id: i.material_id, cantidad_usada: i.cantidad_usada };
@@ -1383,7 +1399,6 @@ angular.module('nexusApp', [])
     showToast('Receta copiada — ajusta el nombre y guarda ✓');
   };
 
-  // Ver ingredientes detallados
   $scope.verIngredientes = function(r) {
     $scope.verIngRec = r;
     $scope.ingredientesVer = [];

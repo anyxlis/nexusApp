@@ -4528,3 +4528,157 @@ body {
   color: #c9a84c;
 }
 
+
+
+/* ══════════════════════════════════════════
+   CERRAR MES — botón header
+══════════════════════════════════════════ */
+.btn-cerrar-mes {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--amber-bg);
+  border: 1px solid rgba(251, 191, 36, .3);
+  color: var(--amber);
+  border-radius: var(--radius-sm);
+  padding: .58rem 1rem;
+  font-family: 'Sora', sans-serif;
+  font-size: .81rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--trans)
+}
+
+.btn-cerrar-mes:hover {
+  background: rgba(251, 191, 36, .18)
+}
+
+/* ══════════════════════════════════════════
+   HISTORIAL DE MESES
+══════════════════════════════════════════ */
+.historial-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(265px, 1fr));
+  gap: 10px;
+  margin-top: .25rem
+}
+
+.hist-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.05rem 1.1rem;
+  cursor: pointer;
+  transition: all var(--trans);
+  animation: slideIn .22s ease
+}
+
+.hist-card:hover {
+  border-color: var(--border2);
+  transform: translateY(-1px)
+}
+
+.hist-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: .75rem
+}
+
+.hist-mes-icon {
+  font-size: 1rem
+}
+
+.hist-mes-label {
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--text)
+}
+
+.hist-kpis {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  margin-bottom: .6rem
+}
+
+.hist-kpi {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  padding: .42rem .62rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px
+}
+
+.hist-kpi span {
+  font-size: .57rem;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  color: var(--text3)
+}
+
+.hist-kpi strong {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .84rem
+}
+
+.hist-kpi.inc strong {
+  color: var(--green)
+}
+
+.hist-kpi.exp strong {
+  color: var(--red)
+}
+
+.hist-kpi.bal strong {
+  color: var(--blue)
+}
+
+.hist-kpi.neg strong {
+  color: var(--red)
+}
+
+.hist-kpi.sav strong {
+  color: var(--accent3)
+}
+
+.hist-bar-wrap {
+  height: 3px;
+  background: var(--bg4);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: .4rem
+}
+
+.hist-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent3));
+  border-radius: 99px;
+  transition: width .5s ease
+}
+
+.hist-bar-fill.bt-warn {
+  background: linear-gradient(90deg, var(--amber), #f59e0b)
+}
+
+.hist-bar-fill.bt-danger {
+  background: linear-gradient(90deg, var(--red), #ef4444)
+}
+
+.hist-date {
+  font-size: .64rem;
+  color: var(--text3)
+}
+
+@media(max-width: 640px) {
+  .historial-grid {
+    grid-template-columns: 1fr
+  }
+
+  .btn-cerrar-mes {
+    font-size: .76rem;
+    padding: .5rem .8rem
+  }
+}
