@@ -16,22 +16,30 @@ function sbHeaders(extra) {
   }, extra || {});
 }
 
+function sbCheck(r) {
+  if (r.ok) return r.json().catch(function() { return []; });
+  return r.json().catch(function() { return {}; }).then(function(err) {
+    console.error('Supabase error', r.status, err);
+    throw new Error(err && err.message ? err.message : ('HTTP ' + r.status));
+  });
+}
+
 function sbGet(table, params) {
   var qs = Object.entries(params || {}).map(function(e) { return e[0] + '=' + encodeURIComponent(e[1]); }).join('&');
   return fetch(SUPA_URL + '/rest/v1/' + table + (qs ? '?' + qs : ''), { headers: sbHeaders() })
-    .then(function(r) { return r.json(); });
+    .then(sbCheck);
 }
 
 function sbPost(table, body) {
   return fetch(SUPA_URL + '/rest/v1/' + table, {
     method: 'POST', headers: sbHeaders(), body: JSON.stringify(body)
-  }).then(function(r) { return r.json(); });
+  }).then(sbCheck);
 }
 
 function sbPatch(table, filter, body) {
   return fetch(SUPA_URL + '/rest/v1/' + table + '?' + filter, {
     method: 'PATCH', headers: sbHeaders(), body: JSON.stringify(body)
-  }).then(function(r) { return r.ok ? r.json().catch(function() { return []; }) : r.json(); });
+  }).then(sbCheck);
 }
 
 function sbDelete(table, filter) {
@@ -124,6 +132,7 @@ angular.module('nexusApp', [])
   $scope.loadingVentas    = false;
   $scope.loadingMayoristas = false;
   $scope.ventaFilter      = 'todas';
+  $scope.invFilter        = 'todas';
   $scope.showVentaModal   = false;
   $scope.showMayoristaModal = false;
   $scope.showAbonoModal   = false;
@@ -331,7 +340,6 @@ angular.module('nexusApp', [])
     loadVentasNegocio();
     loadMayoristas();
     loadMateriales();
-    loadRecetas();
     _loadHistorial();
   }
 
@@ -752,6 +760,14 @@ angular.module('nexusApp', [])
       }).catch(function() { $timeout(function() { $scope.loadingFragancias = false; }); });
   }
 
+  $scope.filteredFragancias = function() {
+    var list = $scope.fragancias || [];
+    if ($scope.invFilter === 'disponibles') return list.filter(function(f) { return +f.stock >= 3; });
+    if ($scope.invFilter === 'poco')        return list.filter(function(f) { return +f.stock > 0 && +f.stock < 3; });
+    if ($scope.invFilter === 'agotadas')    return list.filter(function(f) { return +f.stock <= 0; });
+    return list;
+  };
+
   function loadVentasNegocio() {
     if (!$scope.currentUser) return;
     $scope.loadingVentas = true;
@@ -795,9 +811,42 @@ angular.module('nexusApp', [])
     return $scope.ventasNegocio;
   };
 
+  function cobroFecha(v) { return v.fecha_cobro ? String(v.fecha_cobro).substring(0,10) : ''; }
+  function sumaPendiente(list) {
+    return list.reduce(function(s,v){ return s+((+v.valor_total||0)-(+v.abono||0)); }, 0);
+  }
+
+  $scope.cobrosVencidos = function() {
+    var hoy = toISO(new Date());
+    return ($scope.ventasNegocio||[]).filter(function(v) {
+      return !isPagado(v) && cobroFecha(v) && cobroFecha(v) < hoy;
+    });
+  };
+  $scope.cobrosHoy = function() {
+    var hoy = toISO(new Date());
+    return ($scope.ventasNegocio||[]).filter(function(v) {
+      return !isPagado(v) && cobroFecha(v) === hoy;
+    });
+  };
+  $scope.cobrosFuturos = function() {
+    var hoy = toISO(new Date());
+    return ($scope.ventasNegocio||[]).filter(function(v) {
+      return !isPagado(v) && cobroFecha(v) && cobroFecha(v) > hoy;
+    });
+  };
+  $scope.totalCobrosVencidos = function() { return sumaPendiente($scope.cobrosVencidos()); };
+  $scope.totalCobrosHoy      = function() { return sumaPendiente($scope.cobrosHoy()); };
+  $scope.totalCobrosFuturos  = function() { return sumaPendiente($scope.cobrosFuturos()); };
+  $scope.diasVencido = function(v) {
+    var p = cobroFecha(v).split('-');
+    var fc = new Date(+p[0], +p[1]-1, +p[2]);
+    var hoy = new Date(); hoy.setHours(0,0,0,0);
+    return Math.round((hoy - fc) / 86400000);
+  };
+
   $scope.openVentaModal = function() {
     loadFragancias();
-    $scope.newVenta = { cliente:'', valor_total:0, abono:0, fecha:toISO(new Date()), ya_pago:'false', items:[] };
+    $scope.newVenta = { cliente:'', valor_total:0, abono:0, fecha:toISO(new Date()), fecha_cobro:'', ya_pago:'false', items:[] };
     $scope.showVentaModal = true;
   };
 
@@ -819,6 +868,25 @@ angular.module('nexusApp', [])
   $scope.getFragancia = function(id) {
     return ($scope.fragancias||[]).find(function(f){ return f.id === id; }) || null;
   };
+
+  function parseFraganciasDesc(desc) {
+    if (!desc || desc.indexOf('?') !== -1 || desc.trim() === '') return [];
+    return desc.split(', ').map(function(parte) {
+      var xIdx = parte.lastIndexOf(' x');
+      var nombre, cantidad;
+      if (xIdx > 0 && !isNaN(parte.substring(xIdx + 2))) {
+        nombre   = parte.substring(0, xIdx).trim();
+        cantidad = +parte.substring(xIdx + 2);
+      } else {
+        nombre   = parte.trim();
+        cantidad = 1;
+      }
+      var frag = ($scope.fragancias||[]).find(function(f) {
+        return f.nombre.toLowerCase() === nombre.toLowerCase();
+      });
+      return { fragancia_id: frag ? frag.id : '', cantidad: cantidad };
+    });
+  }
   $scope.getStock = function(id) {
     var f = $scope.getFragancia(id);
     return f ? (+f.stock || 0) : 0;
@@ -858,7 +926,8 @@ angular.module('nexusApp', [])
     sbPost('ventas_negocio',{
       usuario_id:$scope.currentUser.id, cliente:$scope.newVenta.cliente,
       cantidad:$scope.totalUnidadesVenta()||1, valor_total:+$scope.newVenta.valor_total,
-      abono:abono, ya_pago:yaPago, fragancias_desc:desc, fecha:$scope.newVenta.fecha
+      abono:abono, ya_pago:yaPago, fragancias_desc:desc, fecha:$scope.newVenta.fecha,
+      fecha_cobro: $scope.newVenta.fecha_cobro || null
     }).then(function() {
       var stockPromises = ($scope.newVenta.items||[])
         .filter(function(i){ return i.fragancia_id && +i.cantidad > 0; })
@@ -878,7 +947,7 @@ angular.module('nexusApp', [])
           showToast('Venta guardada · Stock descontado ✓');
         });
       });
-    }).catch(function(){$timeout(function(){$scope.savingVenta=false;showToast('Error','err');});});
+    }).catch(function(e){$timeout(function(){$scope.savingVenta=false;showToast('Error al guardar: '+e.message,'err');});});
   };
 
   $scope.openAbonoModal = function(v) { $scope.abonoVenta=v; $scope.nuevoAbono=0; $scope.showAbonoModal=true; };
@@ -890,9 +959,26 @@ angular.module('nexusApp', [])
   };
 
   $scope.deleteVenta = function(v) {
-    if(!confirm('¿Eliminar venta de '+v.cliente+'?')) return;
-    sbDelete('ventas_negocio','id=eq.'+v.id)
-      .then(function(){$timeout(function(){loadVentasNegocio();showToast('Venta eliminada');});});
+    if(!confirm('¿Eliminar venta de '+v.cliente+'? Se devolverá el stock.')) return;
+    var items = parseFraganciasDesc(v.fragancias_desc);
+    var restorePromises = items
+      .filter(function(i){ return i.fragancia_id; })
+      .map(function(i){
+        var f = $scope.getFragancia(i.fragancia_id);
+        if (!f) return Promise.resolve();
+        var nuevoStock = (+f.stock || 0) + (+i.cantidad || 0);
+        f.stock = nuevoStock;
+        return sbPatch('fragancias', 'id=eq.' + f.id, { stock: nuevoStock });
+      });
+    Promise.all(restorePromises).then(function() {
+      return sbDelete('ventas_negocio','id=eq.'+v.id);
+    }).then(function(){
+      $timeout(function(){
+        loadVentasNegocio();
+        loadFragancias();
+        showToast('Venta eliminada · Stock devuelto ✓');
+      });
+    });
   };
 
   $scope.editVentaData = {}; $scope.showEditVentaModal = false; $scope.editingVenta = null;
@@ -902,26 +988,9 @@ angular.module('nexusApp', [])
     $scope.editVentaData = angular.copy(v);
     var rawFecha = v.fecha || v.creado_en || '';
     $scope.editVentaData.fecha = rawFecha ? String(rawFecha).substring(0, 10) : toISO(new Date());
+    $scope.editVentaData.fecha_cobro = v.fecha_cobro ? String(v.fecha_cobro).substring(0, 10) : '';
     $scope.editVentaData.ya_pago = ($scope.editVentaData.ya_pago === true || $scope.editVentaData.ya_pago === 'true') ? 'true' : 'false';
-    $scope.editVentaData.items = [];
-    if (v.fragancias_desc && v.fragancias_desc.indexOf('?') === -1 && v.fragancias_desc.trim() !== '') {
-      var partes = v.fragancias_desc.split(', ');
-      partes.forEach(function(parte) {
-        var xIdx = parte.lastIndexOf(' x');
-        var nombre, cantidad;
-        if (xIdx > 0 && !isNaN(parte.substring(xIdx + 2))) {
-          nombre   = parte.substring(0, xIdx).trim();
-          cantidad = +parte.substring(xIdx + 2);
-        } else {
-          nombre   = parte.trim();
-          cantidad = 1;
-        }
-        var frag = ($scope.fragancias||[]).find(function(f) {
-          return f.nombre.toLowerCase() === nombre.toLowerCase();
-        });
-        $scope.editVentaData.items.push({ fragancia_id: frag ? frag.id : '', cantidad: cantidad });
-      });
-    }
+    $scope.editVentaData.items = parseFraganciasDesc(v.fragancias_desc);
     if ($scope.editVentaData.items.length === 0) {
       $scope.editVentaData.items.push({ fragancia_id: '', cantidad: 1 });
     }
@@ -951,7 +1020,8 @@ angular.module('nexusApp', [])
       abono: +$scope.editVentaData.abono,
       ya_pago: yaPago,
       fragancias_desc: desc || '',
-      fecha: $scope.editVentaData.fecha
+      fecha: $scope.editVentaData.fecha,
+      fecha_cobro: $scope.editVentaData.fecha_cobro || null
     }).then(function(){
       $timeout(function(){
         $scope.showEditVentaModal=false;
@@ -1097,19 +1167,10 @@ angular.module('nexusApp', [])
   $scope.prodTab      = 'materiales';
   $scope.matCatFilter = 'todos';
   $scope.materiales   = [];
-  $scope.recetas      = [];
   $scope.loadingMat   = false;
-  $scope.loadingRec   = false;
-  $scope.loadingIng   = false;
   $scope.showMatModal = false;
-  $scope.showRecModal = false;
-  $scope.showIngModal = false;
   $scope.editingMat   = null;
-  $scope.editingRec   = null;
   $scope.newMat       = {};
-  $scope.newRec       = {};
-  $scope.ingredientesVer = [];
-  $scope.verIngRec    = {};
 
   $scope.matCats = [
     { key: 'todos',    label: 'Todos' },
@@ -1135,110 +1196,8 @@ angular.module('nexusApp', [])
       }).catch(function() { $timeout(function() { $scope.loadingMat = false; }); });
   }
 
-  function loadRecetas() {
-    if (!$scope.currentUser) return;
-    $scope.loadingRec = true;
-    sbGet('receta_fragancia', { usuario_id: 'eq.' + $scope.currentUser.id, select: '*', order: 'nombre.asc' })
-      .then(function(rows) {
-        $timeout(function() {
-          $scope.recetas = rows || [];
-          $scope.loadingRec = false;
-          $scope.recetas.forEach(function(r) { loadIngredientesReceta(r); });
-        });
-      }).catch(function() { $timeout(function() { $scope.loadingRec = false; }); });
-  }
-
-  var ingCache = {};
-
-  function safeIngCache() {
-    if (typeof ingCache !== 'object' || ingCache === null) ingCache = {};
-    return ingCache;
-  }
-
-  function loadIngredientesReceta(r) {
-    sbGet('receta_ingrediente', { receta_id: 'eq.' + r.id, select: '*' }).then(function(rows) {
-      $timeout(function() { safeIngCache()[r.id] = rows || []; });
-    });
-  }
-
-  $scope.getMaterial = function(id) {
-    return $scope.materiales.find(function(m) { return m.id === id; }) || null;
-  };
-
-  $scope.getStockInventario = function(nombre) {
-    var frag = ($scope.fragancias||[]).find(function(f) {
-      return f.nombre.toLowerCase() === (nombre || '').toLowerCase();
-    });
-    return frag ? (+frag.stock || 0) : 0;
-  };
-
-  $scope.getMatUnidad = function(id) {
-    var m = $scope.getMaterial(id);
-    return m ? m.unidad : '';
-  };
-
-  $scope.costoProduccion = function(r) {
-    var ings = (safeIngCache()[r.id] || []).filter(function(i) {
-      var m = $scope.getMaterial(i.material_id);
-      return m && (m.categoria === 'esencia' || m.categoria === 'feromona' || m.categoria === 'alcohol');
-    });
-    return ings.reduce(function(s, i) {
-      var m = $scope.getMaterial(i.material_id);
-      return s + (m ? +m.precio_por_unidad * +i.cantidad_usada : 0);
-    }, 0);
-  };
-
-  $scope.costoEmpaque = function(r) {
-    var ings = (safeIngCache()[r.id] || []).filter(function(i) {
-      var m = $scope.getMaterial(i.material_id);
-      return m && (m.categoria === 'frasco' || m.categoria === 'empaque');
-    });
-    return ings.reduce(function(s, i) {
-      var m = $scope.getMaterial(i.material_id);
-      return s + (m ? +m.precio_por_unidad * +i.cantidad_usada : 0);
-    }, 0);
-  };
-
-  $scope.costoTotal = function(r) { return $scope.costoProduccion(r) + $scope.costoEmpaque(r); };
-  $scope.gananciaUnitaria = function(r) { return (+r.precio_venta || 0) - $scope.costoTotal(r); };
-  $scope.gananciaTotalLote = function(r) { return $scope.gananciaUnitaria(r) * (+r.stock || 0); };
-  $scope.margenPct = function(r) {
-    var venta = +r.precio_venta || 0;
-    return venta > 0 ? Math.round($scope.gananciaUnitaria(r) / venta * 100) : 0;
-  };
-  $scope.margenClass = function(r) {
-    var m = $scope.margenPct(r);
-    if (m >= 40) return 'margen-ok';
-    if (m >= 20) return 'margen-low';
-    return 'margen-neg';
-  };
-
-  $scope.totalCostoProduccionGeneral = function() {
-    return $scope.recetas.reduce(function(s, r) { return s + $scope.costoTotal(r) * (+r.stock || 0); }, 0);
-  };
-  $scope.totalStockGeneral = function() {
-    return $scope.recetas.reduce(function(s, r) { return s + (+r.stock || 0); }, 0);
-  };
-  $scope.totalGananciaGeneral = function() {
-    return $scope.recetas.reduce(function(s, r) { return s + $scope.gananciaTotalLote(r); }, 0);
-  };
-  $scope.margenGeneral = function() {
-    var ventas = $scope.recetas.reduce(function(s, r) { return s + (+r.precio_venta || 0) * (+r.stock || 0); }, 0);
-    return ventas > 0 ? Math.round($scope.totalGananciaGeneral() / ventas * 100) : 0;
-  };
-
   $scope.totalInversionMat = function() {
     return $scope.materiales.reduce(function(s, m) { return s + (+m.precio_total || 0); }, 0);
-  };
-  $scope.costoEstimadoPorFrasco = function() {
-    if (!$scope.recetas.length) return 0;
-    var total = $scope.recetas.reduce(function(s, r) { return s + $scope.costoTotal(r); }, 0);
-    return Math.round(total / $scope.recetas.length);
-  };
-  $scope.margenEstimado = function() {
-    if (!$scope.recetas.length) return 0;
-    var total = $scope.recetas.reduce(function(s, r) { return s + $scope.margenPct(r); }, 0);
-    return Math.round(total / $scope.recetas.length);
   };
 
   $scope.openMatModal = function(m) {
@@ -1275,154 +1234,6 @@ angular.module('nexusApp', [])
     if (!confirm('¿Eliminar ' + m.nombre + '?')) return;
     sbDelete('materiales', 'id=eq.' + m.id)
       .then(function() { $timeout(function() { loadMateriales(); showToast('Eliminado'); }); });
-  };
-
-  $scope.openRecetaModal = function(r) {
-    $scope.editingRec = r || null;
-    if (r) {
-      $scope.newRec = { id: r.id, nombre: r.nombre, genero: r.genero, ml: r.ml, precio_venta: r.precio_venta, stock: r.stock, ingredientes: [] };
-      var ings = safeIngCache()[r.id] || [];
-      $scope.newRec.ingredientes = ings.map(function(i) {
-        return { material_id: i.material_id, cantidad_usada: i.cantidad_usada };
-      });
-      if (!ings.length) {
-        sbGet('receta_ingrediente', { receta_id: 'eq.' + r.id, select: '*' })
-          .then(function(rows) {
-            safeIngCache()[r.id] = rows || [];
-            $scope.$apply(function() {
-              $scope.newRec.ingredientes = (rows || []).map(function(i) {
-                return { material_id: i.material_id, cantidad_usada: i.cantidad_usada };
-              });
-            });
-          });
-      }
-    } else {
-      $scope.newRec = { nombre:'', genero:'F', ml:30, precio_venta:0, stock:0, ingredientes:[] };
-    }
-    $scope.showRecModal = true;
-  };
-
-  $scope.addIngrediente = function() {
-    $scope.newRec.ingredientes = $scope.newRec.ingredientes || [];
-    $scope.newRec.ingredientes.push({ material_id:'', cantidad_usada:0 });
-  };
-
-  $scope.removeIngrediente = function(idx) { $scope.newRec.ingredientes.splice(idx, 1); };
-
-  $scope.ingCosto = function(ing) {
-    var m = $scope.getMaterial(ing.material_id);
-    return m ? Math.round(+m.precio_por_unidad * +ing.cantidad_usada) : 0;
-  };
-
-  $scope.costoTotalNueva = function() {
-    return ($scope.newRec.ingredientes || []).reduce(function(s, i) { return s + $scope.ingCosto(i); }, 0);
-  };
-
-  $scope.margenNueva = function() {
-    var v = +$scope.newRec.precio_venta || 0;
-    var ganancia = v - $scope.costoTotalNueva();
-    return v > 0 ? Math.round((ganancia / v) * 100) : 0;
-  };
-
-  $scope.saveReceta = function() {
-    if (!$scope.newRec.nombre) return;
-    var body = {
-      usuario_id: $scope.currentUser.id,
-      nombre: $scope.newRec.nombre,
-      genero: $scope.newRec.genero || 'F',
-      ml: +$scope.newRec.ml || 30,
-      precio_venta: +$scope.newRec.precio_venta || 0,
-      stock: +$scope.newRec.stock || 0,
-      activa: true
-    };
-    var promise = $scope.editingRec
-      ? sbPatch('receta_fragancia', 'id=eq.' + $scope.editingRec.id, body)
-      : sbPost('receta_fragancia', body);
-    promise.then(function(res) {
-      var recId = $scope.editingRec ? $scope.editingRec.id : (res && res[0] ? res[0].id : null);
-      if (recId && $scope.newRec.ingredientes && $scope.newRec.ingredientes.length) {
-        var deletePromise = $scope.editingRec
-          ? sbDelete('receta_ingrediente', 'receta_id=eq.' + recId)
-          : Promise.resolve();
-        deletePromise.then(function() {
-          var ingPromises = $scope.newRec.ingredientes
-            .filter(function(i) { return i.material_id && i.cantidad_usada > 0; })
-            .map(function(i) {
-              return sbPost('receta_ingrediente', { receta_id: recId, material_id: i.material_id, cantidad_usada: +i.cantidad_usada });
-            });
-          Promise.all(ingPromises).then(function() {
-            $timeout(function() {
-              $scope.showRecModal = false;
-              $scope.editingRec = null;
-              ingCache = {};
-              loadRecetas();
-              showToast('Receta guardada ✓');
-            });
-          });
-        });
-      } else {
-        $timeout(function() {
-          $scope.showRecModal = false;
-          $scope.editingRec = null;
-          loadRecetas();
-          showToast('Receta guardada ✓');
-        });
-      }
-    });
-  };
-
-  $scope.deleteReceta = function(r) {
-    if (!confirm('¿Eliminar receta de ' + r.nombre + '?')) return;
-    sbDelete('receta_fragancia', 'id=eq.' + r.id)
-      .then(function() { $timeout(function() { delete safeIngCache()[r.id]; loadRecetas(); showToast('Eliminada'); }); });
-  };
-
-  $scope.copiarReceta = function(r) {
-    $scope.editingRec = null;
-    $scope.newRec = { nombre: 'Copia de ' + r.nombre, genero: r.genero, ml: r.ml, precio_venta: r.precio_venta, stock: 0, ingredientes: [] };
-    var ings = safeIngCache()[r.id] || [];
-    $scope.newRec.ingredientes = ings.map(function(i) {
-      return { material_id: i.material_id, cantidad_usada: i.cantidad_usada };
-    });
-    if (!ings.length) {
-      sbGet('receta_ingrediente', { receta_id: 'eq.' + r.id, select: '*' })
-        .then(function(rows) {
-          safeIngCache()[r.id] = rows || [];
-          $scope.$apply(function() {
-            $scope.newRec.ingredientes = (rows || []).map(function(i) {
-              return { material_id: i.material_id, cantidad_usada: i.cantidad_usada };
-            });
-          });
-        });
-    }
-    $scope.showRecModal = true;
-    showToast('Receta copiada — ajusta el nombre y guarda ✓');
-  };
-
-  $scope.verIngredientes = function(r) {
-    $scope.verIngRec = r;
-    $scope.ingredientesVer = [];
-    $scope.loadingIng = true;
-    $scope.showIngModal = true;
-    sbGet('receta_ingrediente', { receta_id: 'eq.' + r.id, select: '*' })
-      .then(function(rows) {
-        $timeout(function() {
-          $scope.ingredientesVer = (rows || []).map(function(i) {
-            var m = $scope.getMaterial(i.material_id);
-            return {
-              mat_nombre: m ? m.nombre : '—',
-              mat_unidad: m ? m.unidad : '',
-              cantidad_usada: i.cantidad_usada,
-              costo: m ? Math.round(+m.precio_por_unidad * +i.cantidad_usada) : 0
-            };
-          });
-          $scope.loadingIng = false;
-        });
-      });
-  };
-
-  $scope.totalIngCostVer = function() {
-    return $scope.ingredientesVer.reduce(function(s, i) { return s + i.costo; }, 0);
   };
 
 }]);

@@ -1782,7 +1782,7 @@ body {
 
 .dash-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 9px;
   margin-bottom: 1.4rem
 }
@@ -1998,6 +1998,129 @@ body {
 
 .dfg-item.sav .dfg-val {
   color: var(--accent3)
+}
+
+.dash-cobros-strip {
+  margin-bottom: 1.4rem;
+  border-left: 2px solid var(--amber)
+}
+
+.dash-cobros-strip.cobros-lvl-vencido {
+  border-left-color: var(--red)
+}
+
+.dash-cobros-strip.cobros-lvl-hoy {
+  border-left-color: var(--amber)
+}
+
+.dash-cobros-strip.cobros-lvl-futuro {
+  border-left-color: var(--blue)
+}
+
+.cobro-section {
+  margin-bottom: .7rem
+}
+
+.cobro-section:last-of-type {
+  margin-bottom: 0
+}
+
+.cobro-section-title {
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-bottom: .3rem
+}
+
+.cobro-section-title.vencido {
+  color: var(--red)
+}
+
+.cobro-section-title.hoy {
+  color: var(--amber)
+}
+
+.cobro-section-title.futuro {
+  color: var(--blue)
+}
+
+.dash-cobro-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: .5rem 0;
+  border-bottom: 1px solid var(--border)
+}
+
+.dash-cobro-item:last-of-type {
+  border-bottom: none
+}
+
+.dci-cliente {
+  font-size: .84rem;
+  font-weight: 600
+}
+
+.dci-frags {
+  font-size: .68rem;
+  color: var(--text3);
+  margin-top: 1px
+}
+
+.dci-fecha {
+  font-size: .66rem;
+  margin-top: 2px;
+  font-weight: 600
+}
+
+.dci-fecha.vencido {
+  color: var(--red)
+}
+
+.dci-fecha.futuro {
+  color: var(--blue)
+}
+
+.dci-monto {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .84rem;
+  font-weight: 600;
+  color: var(--amber);
+  white-space: nowrap
+}
+
+.dci-monto.vencido {
+  color: var(--red)
+}
+
+.dci-monto.futuro {
+  color: var(--blue)
+}
+
+.cobro-mas {
+  font-size: .68rem;
+  color: var(--text3);
+  text-align: center;
+  padding-top: .4rem
+}
+
+.dash-cobro-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: .6rem;
+  padding-top: .6rem;
+  border-top: 1px solid var(--border2);
+  font-size: .8rem;
+  color: var(--text2)
+}
+
+.dash-cobro-total strong {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--amber);
+  font-size: .92rem
 }
 
 /* NEGOCIO */
@@ -2219,6 +2342,12 @@ body {
 .vc-meta {
   font-size: .68rem;
   color: var(--text3)
+}
+
+.vc-cobro {
+  font-size: .68rem;
+  color: var(--amber);
+  margin-top: 2px
 }
 
 .vc-right {
@@ -2582,227 +2711,8 @@ body {
   border-left: 2px solid var(--red)
 }
 
-/* RECETAS */
-.rec-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
-  gap: 11px
-}
-
-.rec-card {
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.15rem 1.25rem;
-  transition: border-color var(--trans);
-  cursor: pointer
-}
-
-.rec-card:hover {
-  border-color: var(--border2)
-}
-
-.rec-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: .78rem
-}
-
-.rec-nombre {
-  font-size: .9rem;
-  font-weight: 700;
-  line-height: 1.3
-}
-
-.rec-genero {
-  font-size: .58rem;
-  font-weight: 700;
-  padding: 2px 7px;
-  border-radius: 99px;
-  margin-top: 3px;
-  width: fit-content
-}
-
-.rec-genero.fem {
-  background: var(--pink-bg);
-  color: var(--pink);
-  border: 1px solid rgba(244, 114, 182, .2)
-}
-
-.rec-genero.mas {
-  background: var(--blue-bg);
-  color: var(--blue);
-  border: 1px solid rgba(96, 165, 250, .2)
-}
-
-.rec-genero.uni {
-  background: var(--accent-dim);
-  color: var(--accent3);
-  border: 1px solid rgba(123, 94, 167, .25)
-}
-
-.rec-ml {
-  font-size: .7rem;
-  color: var(--text3);
-  margin-top: 2px
-}
-
-.rec-costos {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 5px;
-  margin-bottom: .78rem
-}
-
-.rc-item {
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xs);
-  padding: .42rem .62rem
-}
-
-.rc-lbl {
-  font-size: .58rem;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--text3)
-}
-
-.rc-val {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .82rem;
-  font-weight: 600;
-  color: var(--text);
-  margin-top: 2px
-}
-
-.rc-val.green {
-  color: var(--green)
-}
-
-.rc-val.red {
-  color: var(--red)
-}
-
-.rc-val.accent {
-  color: var(--accent3)
-}
-
-.rec-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: .68rem;
-  border-top: 1px solid var(--border)
-}
-
-.rec-stock {
-  font-size: .73rem;
-  color: var(--text2)
-}
-
-.rec-margen {
-  font-size: .73rem;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 99px
-}
-
-.margen-ok {
-  background: var(--green-bg);
-  color: var(--green);
-  border: 1px solid rgba(52, 211, 153, .2)
-}
-
-.margen-low {
-  background: var(--amber-bg);
-  color: var(--amber);
-  border: 1px solid rgba(251, 191, 36, .2)
-}
-
-.margen-neg {
-  background: var(--red-bg);
-  color: var(--red);
-  border: 1px solid rgba(248, 113, 113, .2)
-}
-
-.rec-actions {
-  display: flex;
-  gap: 5px;
-  margin-top: .68rem
-}
-
-.td-green {
-  color: var(--green)
-}
-
 .td-red {
   color: var(--red)
-}
-
-.td-accent {
-  color: var(--accent3)
-}
-
-/* RENTABILIDAD */
-.rent-table-wrap {
-  overflow-x: auto;
-  border-radius: var(--radius);
-  border: 1px solid var(--border)
-}
-
-.rent-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: var(--bg2)
-}
-
-.rent-table th {
-  font-size: .6rem;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--text3);
-  padding: .68rem .88rem;
-  text-align: right;
-  border-bottom: 1px solid var(--border);
-  white-space: nowrap
-}
-
-.rent-table th:first-child {
-  text-align: left
-}
-
-.rent-table td {
-  padding: .63rem .88rem;
-  font-size: .78rem;
-  border-bottom: 1px solid var(--border);
-  text-align: right;
-  font-family: 'JetBrains Mono', monospace
-}
-
-.rent-table td:first-child {
-  text-align: left;
-  font-family: 'Sora', sans-serif;
-  font-weight: 600
-}
-
-.rent-table tr:last-child td {
-  border-bottom: none
-}
-
-.rent-table tr:hover td {
-  background: var(--bg3)
-}
-
-.rent-total {
-  background: var(--bg3) !important;
-  font-weight: 700
-}
-
-.rent-total td {
-  color: var(--text) !important;
-  border-top: 1px solid var(--border2) !important
 }
 
 /* INGREDIENTES */
@@ -2876,25 +2786,6 @@ body {
 
 .ing-del-btn:hover {
   color: var(--red)
-}
-
-.ing-total-row {
-  display: flex;
-  justify-content: space-between;
-  padding: .52rem .82rem;
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-size: .82rem
-}
-
-.ing-total-row span {
-  color: var(--text2)
-}
-
-.ing-total-row strong {
-  font-family: 'JetBrains Mono', monospace;
-  color: var(--accent3)
 }
 
 /* PLANES */
@@ -3300,10 +3191,6 @@ body {
   .mat-grid {
     grid-template-columns: 1fr 1fr
   }
-
-  .rec-grid {
-    grid-template-columns: 1fr
-  }
 }
 
 @media(max-width:600px) {
@@ -3589,11 +3476,6 @@ body {
     grid-template-columns: 1fr
   }
 
-  /* Recetas — 1 columna */
-  .rec-grid {
-    grid-template-columns: 1fr
-  }
-
   /* Planes — 1 columna */
   .planes-grid,
   .plan-extras {
@@ -3681,11 +3563,6 @@ body {
   .auth-card {
     padding: 2rem 1.5rem;
     border-radius: 16px
-  }
-
-  /* Rentabilidad — scroll horizontal */
-  .rent-table-wrap {
-    overflow-x: auto
   }
 
   /* Filtros scroll */
@@ -3800,10 +3677,6 @@ body {
 
   .mat-grid {
     grid-template-columns: 1fr 1fr
-  }
-
-  .rec-grid {
-    grid-template-columns: 1fr
   }
 
   .dash-finance-grid {
@@ -3970,19 +3843,6 @@ body {
   .view-section * {
     max-width: 100%;
     box-sizing: border-box
-  }
-
-  .rec-costos {
-    grid-template-columns: 1fr 1fr;
-    gap: 4px
-  }
-
-  .rc-val {
-    font-size: .75rem
-  }
-
-  .rc-lbl {
-    font-size: .55rem
   }
 
   /* Semana link en mobile nav - botón adicional en agenda */

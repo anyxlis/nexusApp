@@ -148,6 +148,14 @@
             <div class="dsc-icon" ng-style="{'color': balance() >= 0 ? 'var(--blue)' : 'var(--red)'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="22" height="22"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div>
             <div><p class="dsc-num" ng-style="{'color': balance() >= 0 ? 'var(--blue)' : 'var(--red)'}">${{balance() | number}}</p><p class="dsc-lbl">Balance neto</p></div>
           </div>
+          <div class="dash-stat-card" ng-class="cobrosVencidos().length > 0 ? 'dsc-danger' : ''">
+            <div class="dsc-icon" style="color:var(--red)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="22" height="22"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg></div>
+            <div><p class="dsc-num">{{cobrosVencidos().length}}</p><p class="dsc-lbl">Cobros vencidos</p></div>
+          </div>
+          <div class="dash-stat-card" ng-class="cobrosHoy().length > 0 ? 'dsc-danger' : ''">
+            <div class="dsc-icon" style="color:var(--amber)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="22" height="22"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+            <div><p class="dsc-num">{{cobrosHoy().length}}</p><p class="dsc-lbl">Cobros hoy</p></div>
+          </div>
         </div>
         <div class="dash-cols">
           <div class="dash-panel">
@@ -173,6 +181,50 @@
               <span class="task-pri pri-{{t.prioridad}}">{{t.prioridad}}</span>
             </div>
           </div>
+        </div>
+        <div class="dash-panel dash-cobros-strip" ng-if="cobrosVencidos().length>0 || cobrosHoy().length>0 || cobrosFuturos().length>0" ng-class="cobrosVencidos().length>0 ? 'cobros-lvl-vencido' : (cobrosHoy().length>0 ? 'cobros-lvl-hoy' : 'cobros-lvl-futuro')">
+          <div class="dash-panel-header">
+            <span>💰 Cobros pendientes</span>
+            <button class="btn-ghost" style="font-size:.75rem;padding:.3rem .7rem" ng-click="setView('negocio'); negTab='ventas'">Ver ventas →</button>
+          </div>
+
+          <div class="cobro-section" ng-if="cobrosVencidos().length>0">
+            <p class="cobro-section-title vencido">🔴 Vencidos ({{cobrosVencidos().length}})</p>
+            <div class="dash-cobro-item" ng-repeat="v in cobrosVencidos() | orderBy:'fecha_cobro'">
+              <div>
+                <p class="dci-cliente">{{v.cliente}}</p>
+                <p class="dci-frags">{{v.fragancias_desc || (v.cantidad + ' fragancia(s)')}}</p>
+                <p class="dci-fecha vencido">Venció hace {{diasVencido(v)}} día{{diasVencido(v)===1?'':'s'}} · {{v.fecha_cobro | date:'dd MMM'}}</p>
+              </div>
+              <span class="dci-monto vencido">${{(v.valor_total - v.abono) | number}}</span>
+            </div>
+          </div>
+
+          <div class="cobro-section" ng-if="cobrosHoy().length>0">
+            <p class="cobro-section-title hoy">🟡 Hoy ({{cobrosHoy().length}})</p>
+            <div class="dash-cobro-item" ng-repeat="v in cobrosHoy()">
+              <div>
+                <p class="dci-cliente">{{v.cliente}}</p>
+                <p class="dci-frags">{{v.fragancias_desc || (v.cantidad + ' fragancia(s)')}}</p>
+              </div>
+              <span class="dci-monto">${{(v.valor_total - v.abono) | number}}</span>
+            </div>
+          </div>
+
+          <div class="cobro-section" ng-if="cobrosFuturos().length>0">
+            <p class="cobro-section-title futuro">🔵 Próximos ({{cobrosFuturos().length}})</p>
+            <div class="dash-cobro-item" ng-repeat="v in cobrosFuturos() | orderBy:'fecha_cobro' | limitTo:6">
+              <div>
+                <p class="dci-cliente">{{v.cliente}}</p>
+                <p class="dci-frags">{{v.fragancias_desc || (v.cantidad + ' fragancia(s)')}}</p>
+                <p class="dci-fecha futuro">{{v.fecha_cobro | date:'dd MMM yyyy'}}</p>
+              </div>
+              <span class="dci-monto futuro">${{(v.valor_total - v.abono) | number}}</span>
+            </div>
+            <p class="cobro-mas" ng-if="cobrosFuturos().length>6">+{{cobrosFuturos().length-6}} más próximamente</p>
+          </div>
+
+          <div class="dash-cobro-total"><span>Total pendiente</span><strong>${{(totalCobrosVencidos()+totalCobrosHoy()+totalCobrosFuturos()) | number}}</strong></div>
         </div>
         <div class="dash-panel dash-finance-strip">
           <div class="dash-panel-header">
@@ -458,8 +510,6 @@
           <button class="neg-tab-btn" ng-click="negTab='ventas'" ng-class="{'active':negTab==='ventas'}">Ventas</button>
           <button class="neg-tab-btn" ng-click="negTab='inventario'" ng-class="{'active':negTab==='inventario'}">Inventario</button>
           <button class="neg-tab-btn" ng-click="negTab='materiales'" ng-class="{'active':negTab==='materiales'}">Materiales</button>
-          <button class="neg-tab-btn" ng-click="negTab='recetas'" ng-class="{'active':negTab==='recetas'}">Recetas</button>
-          <button class="neg-tab-btn" ng-click="negTab='rentabilidad'" ng-class="{'active':negTab==='rentabilidad'}">Rentabilidad</button>
         </div>
 
         <!-- RESUMEN -->
@@ -485,14 +535,6 @@
               </div>
               <div class="neg-empty" ng-if="ventasNegocio.length===0" style="padding:1rem">Sin ventas aún</div>
             </div>
-            <div class="neg-panel" ng-if="recetas.length>0">
-              <h3 class="neg-panel-title">⚗️ Producción — vista rápida</h3>
-              <div class="neg-kpi-row" style="margin-top:.75rem">
-                <div class="neg-kpi"><span class="neg-kpi-ico">💵</span><div><p class="kpi-label">Inversión materiales</p><p class="kpi-value" style="color:var(--red)">${{totalInversionMat() | number}}</p></div></div>
-                <div class="neg-kpi"><span class="neg-kpi-ico">📊</span><div><p class="kpi-label">Margen promedio</p><p class="kpi-value" style="color:var(--accent2)">{{margenGeneral()}}%</p></div></div>
-              </div>
-              <button class="btn-ghost" style="margin-top:.75rem;font-size:.78rem" ng-click="negTab='rentabilidad'">Ver rentabilidad →</button>
-            </div>
           </div>
         </div>
 
@@ -516,6 +558,7 @@
                   <span class="vc-frag-badge" ng-repeat="frag in v.fragancias_desc.split(', ')">{{frag}}</span>
                 </div>
                 <p class="vc-meta">{{v.cantidad}} fragancia(s) · {{v.fecha | date:'dd MMM yyyy'}}</p>
+                <p class="vc-cobro" ng-if="!v.ya_pago && v.fecha_cobro">💰 Cobrar: {{v.fecha_cobro | date:'dd MMM yyyy'}}</p>
               </div>
               <div class="vc-right">
                 <p class="vc-total">${{v.valor_total | number}}</p>
@@ -547,8 +590,9 @@
           <div class="loading-row" ng-show="loadingFragancias"><div class="spinner"></div><span>Cargando…</span></div>
           <div ng-show="!loadingFragancias">
             <div class="neg-empty" ng-if="!fragancias || fragancias.length===0">Sin fragancias. ¡Añade la primera!</div>
+            <div class="neg-empty" ng-if="fragancias.length>0 && filteredFragancias().length===0">Ninguna fragancia coincide con este filtro.</div>
             <div class="inv-grid">
-              <div class="inv-card" ng-repeat="f in fragancias | orderBy:'nombre'">
+              <div class="inv-card" ng-repeat="f in filteredFragancias() | orderBy:'nombre'">
                 <div class="inv-card-top">
                   <span class="inv-genero" ng-class="f.genero==='F'?'fem':'mas'">{{f.genero}}</span>
                   <span class="inv-gramos" ng-class="f.stock < 3 ? 'low-stock' : ''">{{f.stock}}/{{f.cantidad}} und</span>
@@ -583,8 +627,6 @@
             <div class="neg-kpi-row" style="margin-bottom:1.5rem">
               <div class="neg-kpi"><span class="neg-kpi-ico">💵</span><div><p class="kpi-label">Inversión total</p><p class="kpi-value" style="color:var(--red)">${{totalInversionMat() | number}}</p></div></div>
               <div class="neg-kpi"><span class="neg-kpi-ico">🧪</span><div><p class="kpi-label">Tipos</p><p class="kpi-value" style="color:var(--accent2)">{{materiales.length}}</p></div></div>
-              <div class="neg-kpi"><span class="neg-kpi-ico">⚗️</span><div><p class="kpi-label">Costo x frasco</p><p class="kpi-value" style="color:var(--green)">${{costoEstimadoPorFrasco() | number}}</p></div></div>
-              <div class="neg-kpi"><span class="neg-kpi-ico">📊</span><div><p class="kpi-label">Margen estimado</p><p class="kpi-value" style="color:var(--accent2)">{{margenEstimado()}}%</p></div></div>
             </div>
             <div class="neg-empty" ng-if="filteredMateriales().length===0">Sin materiales. ¡Añade el primero!</div>
             <div class="mat-grid">
@@ -603,70 +645,6 @@
           </div>
         </div>
 
-        <!-- RECETAS -->
-        <div ng-show="negTab==='recetas'">
-          <div style="display:flex;justify-content:flex-end;margin-bottom:1.2rem">
-            <button class="btn-primary" ng-click="openRecetaModal()">+ Nueva receta</button>
-          </div>
-          <div class="loading-row" ng-show="loadingRec"><div class="spinner"></div><span>Cargando…</span></div>
-          <div ng-show="!loadingRec">
-            <div class="neg-empty" ng-if="recetas.length===0">Sin recetas aún.</div>
-            <div class="rec-grid">
-              <div class="rec-card" ng-repeat="r in recetas | orderBy:'nombre'">
-                <div class="rec-header">
-                  <div>
-                    <p class="rec-nombre">{{r.nombre}}</p>
-                    <span class="rec-genero" ng-class="r.genero==='F'?'fem':(r.genero==='M'?'mas':'uni')">{{r.genero==='F'?'Femenino':(r.genero==='M'?'Masculino':'Unisex')}}</span>
-                    <p class="rec-ml">{{r.ml}}ml por frasco</p>
-                  </div>
-                </div>
-                <div class="rec-costos">
-                  <div class="rc-item"><p class="rc-lbl">Costo producción</p><p class="rc-val">${{costoProduccion(r) | number}}</p></div>
-                  <div class="rc-item"><p class="rc-lbl">Costo empaque</p><p class="rc-val">${{costoEmpaque(r) | number}}</p></div>
-                  <div class="rc-item"><p class="rc-lbl">Costo total</p><p class="rc-val red">${{costoTotal(r) | number}}</p></div>
-                  <div class="rc-item"><p class="rc-lbl">Precio venta</p><p class="rc-val green">${{r.precio_venta | number}}</p></div>
-                  <div class="rc-item"><p class="rc-lbl">Gan. / frasco</p><p class="rc-val accent">${{gananciaUnitaria(r) | number}}</p></div>
-                  <div class="rc-item"><p class="rc-lbl">Gan. total lote</p><p class="rc-val accent">${{gananciaTotalLote(r) | number}}</p></div>
-                </div>
-                <div class="rec-footer">
-                  <span class="rec-stock">Inv: <strong ng-class="getStockInventario(r.nombre) === 0 ? 'td-red' : (getStockInventario(r.nombre) < 3 ? '' : 'td-green')">{{getStockInventario(r.nombre)}} frascos</strong></span>
-                  <span class="rec-margen" ng-class="margenClass(r)">{{margenPct(r)}}% margen</span>
-                </div>
-                <div class="rec-actions">
-                  <button class="btn-ghost" style="font-size:.75rem;padding:.35rem .7rem" ng-click="verIngredientes(r)">Ver ingredientes</button>
-                  <button class="btn-ghost" style="font-size:.75rem;padding:.35rem .7rem" ng-click="openRecetaModal(r)">✎ Editar</button>
-                  <button class="btn-ghost" style="font-size:.75rem;padding:.35rem .7rem;color:var(--accent2)" ng-click="copiarReceta(r)">⧉ Copiar</button>
-                  <button class="vc-btn-del" ng-click="deleteReceta(r)">✕</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- RENTABILIDAD -->
-        <div ng-show="negTab==='rentabilidad'">
-          <div class="loading-row" ng-show="loadingRec"><div class="spinner"></div><span>Calculando…</span></div>
-          <div ng-show="!loadingRec">
-            <div class="neg-empty" ng-if="recetas.length===0">Crea recetas para ver la rentabilidad.</div>
-            <div class="rent-table-wrap" ng-if="recetas.length>0">
-              <table class="rent-table">
-                <thead>
-                  <tr>
-                    <th style="text-align:left">Fragancia</th><th>ML</th><th>Costo prod.</th><th>Costo emp.</th><th>Costo total</th><th>Precio venta</th><th>Gan./frasco</th><th>Stock</th><th>Gan. total</th><th>Margen</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr ng-repeat="r in recetas | orderBy:'-precio_venta'">
-                    <td>{{r.nombre}}</td><td>{{r.ml}}</td><td>${{costoProduccion(r) | number}}</td><td>${{costoEmpaque(r) | number}}</td><td class="td-red">${{costoTotal(r) | number}}</td><td>${{r.precio_venta | number}}</td><td class="td-green">${{gananciaUnitaria(r) | number}}</td><td ng-class="getStockInventario(r.nombre)===0?'td-red':''">{{getStockInventario(r.nombre)}}</td><td class="td-accent">${{gananciaTotalLote(r) | number}}</td><td ng-class="margenClass(r)">{{margenPct(r)}}%</td>
-                  </tr>
-                  <tr class="rent-total">
-                    <td>TOTAL</td><td>—</td><td>—</td><td>—</td><td class="td-red">${{totalCostoProduccionGeneral() | number}}</td><td>—</td><td>—</td><td>{{totalStockGeneral()}}</td><td class="td-accent">${{totalGananciaGeneral() | number}}</td><td class="td-accent">{{margenGeneral()}}%</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
       </section>
 
       <!-- MAYORISTAS -->
@@ -937,6 +915,7 @@
       <div class="form-group"><label>Fecha</label><input type="date" ng-model="newVenta.fecha" /></div>
       <div class="form-group"><label>¿Ya pagó completo?</label><select ng-model="newVenta.ya_pago"><option value="false">No</option><option value="true">Sí</option></select></div>
     </div>
+    <div class="form-group" ng-if="newVenta.ya_pago==='false'"><label>Fecha de cobro</label><input type="date" ng-model="newVenta.fecha_cobro" /></div>
     <div ng-if="stockInsuficiente()" style="background:var(--red-bg);border:1px solid rgba(240,98,146,.3);border-radius:var(--radius-xs);padding:.6rem .9rem;font-size:.8rem;color:var(--red);margin-bottom:.75rem">⚠️ Una o más fragancias no tienen stock suficiente.</div>
     <div class="modal-actions">
       <button class="btn-ghost" ng-click="closeVentaModal()">Cancelar</button>
@@ -1019,61 +998,6 @@
     </div>
   </div>
 
-  <!-- MODAL RECETA -->
-  <div class="overlay" ng-show="showRecModal" ng-click="showRecModal=false"></div>
-  <div class="modal" ng-show="showRecModal" style="width:min(600px,95vw)">
-    <h2>{{editingRec ? 'Editar receta' : 'Nueva receta de fragancia'}}</h2>
-    <div class="form-row">
-      <div class="form-group"><label>Nombre *</label><input type="text" ng-model="newRec.nombre" placeholder="Ej: Cloud - Ariana Grande" /></div>
-      <div class="form-group"><label>Género</label><select ng-model="newRec.genero"><option value="F">Femenino</option><option value="M">Masculino</option><option value="U">Unisex</option></select></div>
-    </div>
-    <div class="form-row">
-      <div class="form-group"><label>ML por frasco</label><input type="number" ng-model="newRec.ml" placeholder="30" /></div>
-      <div class="form-group"><label>Precio de venta (COP)</label><input type="number" ng-model="newRec.precio_venta" placeholder="20000" /></div>
-    </div>
-    <div class="form-group"><label>Stock de frascos</label><input type="number" ng-model="newRec.stock" placeholder="0" /></div>
-    <div class="section-divider" style="margin:1rem 0"><span>Ingredientes por frasco</span></div>
-    <div class="ing-list">
-      <div class="ing-row" ng-repeat="ing in newRec.ingredientes">
-        <select class="ing-sel" ng-model="ing.material_id" ng-change="ing.material = getMaterial(ing.material_id)">
-          <option value="">— Selecciona material —</option>
-          <option ng-repeat="m in materiales" value="{{m.id}}">{{m.nombre}} ({{m.unidad}})</option>
-        </select>
-        <input type="number" class="ing-qty" ng-model="ing.cantidad_usada" placeholder="0" min="0" step="0.1" />
-        <span class="ing-unit">{{getMatUnidad(ing.material_id)}}</span>
-        <span class="ing-costo">${{ingCosto(ing) | number}}</span>
-        <button class="ing-del-btn" ng-click="removeIngrediente($index)">✕</button>
-      </div>
-    </div>
-    <button class="btn-ghost" style="width:100%;margin-bottom:.5rem" ng-click="addIngrediente()">+ Agregar ingrediente</button>
-    <div class="ing-total-row"><span>Costo total por frasco:</span><strong>${{costoTotalNueva() | number}}</strong></div>
-    <div class="ing-total-row" style="margin-top:4px" ng-if="newRec.precio_venta > 0">
-      <span>Ganancia estimada:</span><strong style="color:var(--green)">${{(newRec.precio_venta - costoTotalNueva()) | number}} ({{margenNueva()}}%)</strong>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-ghost" ng-click="showRecModal=false">Cancelar</button>
-      <button class="btn-primary" ng-click="saveReceta()">{{editingRec ? 'Actualizar' : 'Guardar receta'}}</button>
-    </div>
-  </div>
-
-  <!-- MODAL VER INGREDIENTES -->
-  <div class="overlay" ng-show="showIngModal" ng-click="showIngModal=false"></div>
-  <div class="modal" ng-show="showIngModal" style="width:min(500px,95vw)">
-    <h2>Ingredientes — {{verIngRec.nombre}}</h2>
-    <div class="loading-row" ng-show="loadingIng"><div class="spinner"></div><span>Cargando…</span></div>
-    <div ng-show="!loadingIng">
-      <div class="ing-list">
-        <div class="ing-row" ng-repeat="ing in ingredientesVer">
-          <span style="flex:1;font-size:.85rem">{{ing.mat_nombre}}</span>
-          <span class="ing-qty" style="width:auto;text-align:right;font-family:'JetBrains Mono',monospace">{{ing.cantidad_usada}}</span>
-          <span class="ing-unit">{{ing.mat_unidad}}</span>
-          <span class="ing-costo">${{ing.costo | number}}</span>
-        </div>
-      </div>
-      <div class="ing-total-row"><span>Costo total por frasco:</span><strong>${{totalIngCostVer() | number}}</strong></div>
-    </div>
-    <div class="modal-actions"><button class="btn-ghost" ng-click="showIngModal=false">Cerrar</button></div>
-  </div>
 
   <!-- MODAL EDITAR TAREA -->
   <div class="overlay" ng-show="showTaskModal" ng-click="showTaskModal=false"></div>
@@ -1122,6 +1046,7 @@
       <div class="form-group"><label>Fecha</label><input type="text" ng-model="editVentaData.fecha" placeholder="YYYY-MM-DD" pattern="\d{4}-\d{2}-\d{2}" onfocus="this.type='date'" onblur="this.type=this.value?'date':'text'" /></div>
       <div class="form-group"><label>¿Ya pagó?</label><select ng-model="editVentaData.ya_pago"><option value="false">No</option><option value="true">Sí</option></select></div>
     </div>
+    <div class="form-group" ng-if="editVentaData.ya_pago==='false'"><label>Fecha de cobro</label><input type="date" ng-model="editVentaData.fecha_cobro" /></div>
     <div class="modal-actions">
       <button class="btn-ghost" ng-click="showEditVentaModal=false">Cancelar</button>
       <button class="btn-primary" ng-click="saveEditVenta()">Guardar cambios</button>
