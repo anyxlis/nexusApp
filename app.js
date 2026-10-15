@@ -57,6 +57,15 @@ function simpleHash(str) {
   return 'h_' + Math.abs(h).toString(16) + '_' + str.length;
 }
 
+function parseISO(s) {
+  var p = String(s).substring(0, 10).split('-');
+  return new Date(+p[0], +p[1] - 1, +p[2]);
+}
+function addDays(iso, n) {
+  var d = parseISO(iso); d.setDate(d.getDate() + n); return toISO(d);
+}
+function pad2(n) { return String(n).padStart(2, '0'); }
+
 function toISO(d) {
   if (!d) return '';
   var dt = d instanceof Date ? d : new Date(d);
@@ -74,6 +83,26 @@ angular.module('nexusApp', [])
   return function(input) {
     if (input == null || isNaN(input)) return '0';
     return Number(input).toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  };
+})
+
+.directive('strVal', function() {
+  return {
+    restrict: 'A', require: 'ngModel',
+    link: function(scope, el, attr, ctrl) {
+      var isTime = attr.type === 'time';
+      ctrl.$formatters.push(function(v) {
+        if (v == null || v === '') return null;
+        if (v instanceof Date) return v;
+        var s = String(v);
+        if (isTime) { var t = s.split(':'); return new Date(1970, 0, 1, +t[0] || 0, +t[1] || 0, 0, 0); }
+        return parseISO(s);
+      });
+      ctrl.$parsers.push(function(d) {
+        if (!(d instanceof Date) || isNaN(d)) return '';
+        return isTime ? pad2(d.getHours()) + ':' + pad2(d.getMinutes()) : toISO(d);
+      });
+    }
   };
 })
 
@@ -109,7 +138,10 @@ angular.module('nexusApp', [])
   $scope.authData    = {};
   $scope.authError   = '';
   $scope.currentUser = null;
-  $scope.activeView  = 'agenda';
+  // Modo app móvil: solo Semana y Finanzas (al instalarla o con ?app=movil)
+  $scope.mobileApp = /[?&]app=movil/.test(location.search) ||
+    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+  $scope.activeView  = $scope.mobileApp ? 'agenda' : 'dashboard';
   $scope.toast       = { show: false, msg: '', type: 'ok' };
 
   $scope.today        = new Date();
@@ -167,9 +199,17 @@ angular.module('nexusApp', [])
   $scope.savingCierre        = false;
 
   // ── Toast ─────────────────────────────────────────────
-  function showToast(msg, type) {
-    $scope.toast = { show: true, msg: msg, type: type || 'ok' };
-    $timeout(function() { $scope.toast.show = false; }, 3000);
+  var toastTimer = null;
+  function showToast(msg, type, undo) {
+    if (toastTimer) $timeout.cancel(toastTimer);
+    $scope.toast = { show: true, msg: msg, type: type || 'ok', undo: undo || null };
+    toastTimer = $timeout(function() { $scope.toast.show = false; }, undo ? 7000 : 3000);
+  }
+  function undoInsert(table, row, reload, label) {
+    return function() {
+      var r = angular.copy(row); delete r.id; delete r.creado_en;
+      sbPost(table, r).then(function() { $timeout(function() { reload(); showToast(label + ' restaurado ✓'); }); });
+    };
   }
 
   // ── Session ───────────────────────────────────────────
@@ -340,6 +380,7 @@ angular.module('nexusApp', [])
     loadVentasNegocio();
     loadMayoristas();
     loadMateriales();
+    loadPedidosMay();
     _loadHistorial();
   }
 
@@ -357,7 +398,7 @@ angular.module('nexusApp', [])
     $scope.loadingTasks = true;
     sbGet('tareas', { usuario_id: 'eq.' + $scope.currentUser.id, select: '*', order: 'creado_en.desc' })
       .then(function(rows) {
-        $timeout(function() { $scope.tasks = rows || []; $scope.loadingTasks = false; });
+        $timeout(function() { $scope.tasks = rows || []; $scope.loadingTasks = false; buildTaskGroups(); });
       }).catch(function() { $timeout(function() { $scope.loadingTasks = false; }); });
   }
 
@@ -435,17 +476,24 @@ angular.module('nexusApp', [])
       hora_fin: $scope.newEvent.hora_fin || null,
       categoria: $scope.newEvent.categoria || 'otro'
     };
+    var rep = !$scope.editingEvent && $scope.newEvent.repetir ? $scope.newEvent.repetir : '';
+    var rows = null;
+    if (rep) {
+      rows = repeatDates($scope.newEvent.fecha, rep, $scope.newEvent.repetirSemanas)
+        .map(function(d) { return Object.assign({}, body, { fecha: d }); });
+    }
     var promise = $scope.editingEvent
       ? sbPatch('eventos', 'id=eq.' + $scope.editingEvent.id, body)
-      : sbPost('eventos', body);
-    promise.then(function() {
+      : sbPost('eventos', rows || body);
+    promise.then(function(created) {
       $timeout(function() {
         var wasEditing = !!$scope.editingEvent;
         $scope.savingEvent = false;
         $scope.showEventModal = false;
         $scope.editingEvent = null;
         loadEvents();
-        showToast(wasEditing ? 'Evento actualizado ✓' : 'Evento guardado ✓');
+        if (rows) showToast(rows.length + ' eventos creados ✓', 'ok', undoBatch(created));
+        else showToast(wasEditing ? 'Evento actualizado ✓' : 'Evento guardado ✓');
       });
     }).catch(function() {
       $timeout(function() { $scope.savingEvent = false; showToast('Error al guardar', 'err'); });
@@ -455,9 +503,129 @@ angular.module('nexusApp', [])
   $scope.deleteEvent = function(ev, $event) {
     if ($event) $event.stopPropagation();
     sbDelete('eventos', 'id=eq.' + ev.id).then(function() {
-      $timeout(function() { loadEvents(); showToast('Evento eliminado'); });
+      $timeout(function() { loadEvents(); showToast('Evento eliminado', 'ok', undoInsert('eventos', ev, loadEvents, 'Evento')); });
     });
   };
+
+  // ── Formulario rápido de evento ──
+  function addMin(t, m) {
+    var x = Math.min(23 * 60 + 59, Math.max(0, timeToMinutes(t) + m));
+    return pad2(Math.floor(x / 60)) + ':' + pad2(x % 60);
+  }
+  $scope.durMin = function() {
+    var e = $scope.newEvent;
+    if (!e || !e.hora_inicio || !e.hora_fin) return 0;
+    return timeToMinutes(e.hora_fin) - timeToMinutes(e.hora_inicio);
+  };
+  $scope.durLabel = function(m) {
+    if (m < 60) return m + ' min';
+    var hh = Math.floor(m / 60), mm = m % 60;
+    return mm ? hh + ' h ' + mm : hh + ' h';
+  };
+  var lastDur = 60;
+  $scope.onStartChange = function() {
+    var e = $scope.newEvent; if (!e.hora_inicio) return;
+    e.hora_fin = addMin(e.hora_inicio, lastDur);
+  };
+  $scope.onEndChange = function() { var d = $scope.durMin(); if (d > 0) lastDur = d; };
+  $scope.setDur = function(m) {
+    var e = $scope.newEvent; if (!e.hora_inicio) e.hora_inicio = '09:00';
+    lastDur = m; e.hora_fin = addMin(e.hora_inicio, m);
+  };
+  $scope.weeksVal = function() { return Math.max(1, Math.min(+$scope.newEvent.repetirSemanas || 4, 26)); };
+  $scope.stepWeeks = function(n) { $scope.newEvent.repetirSemanas = Math.max(1, Math.min($scope.weeksVal() + n, 26)); };
+  $scope.repeatCount = function() {
+    var e = $scope.newEvent;
+    return e && e.repetir && e.fecha ? repeatDates(e.fecha, e.repetir, e.repetirSemanas).length : 1;
+  };
+
+  // ── Repetición y copia de semanas (ahorra trabajo manual) ──
+  function repeatDates(startISO, mode, weeks) {
+    weeks = Math.max(1, Math.min(+weeks || 4, 26));
+    var out = [startISO], i;
+    if (mode === 'semanal') {
+      for (i = 1; i < weeks; i++) out.push(addDays(startISO, 7 * i));
+    } else {
+      for (i = 1; i < weeks * 7; i++) {
+        var d = addDays(startISO, i), dow = parseISO(d).getDay();
+        if (mode === 'laboral' && (dow === 0 || dow === 6)) continue;
+        out.push(d);
+      }
+    }
+    return out;
+  }
+
+  function undoBatch(created) {
+    var ids = (created || []).map(function(r) { return r.id; });
+    if (!ids.length) return null;
+    return function() {
+      sbDelete('eventos', 'id=in.(' + ids.join(',') + ')').then(function() {
+        $timeout(function() { loadEvents(); showToast('Cambios deshechos'); });
+      });
+    };
+  }
+
+  $scope.duplicateWeek = function(srcStartISO, shift) {
+    var srcEnd = addDays(srcStartISO, 6);
+    var src = $scope.events.filter(function(e) { return e.fecha >= srcStartISO && e.fecha <= srcEnd; });
+    var have = {};
+    $scope.events.forEach(function(e) { have[e.fecha + '|' + e.titulo + '|' + String(e.hora_inicio || '').substring(0, 5)] = 1; });
+    var rows = [];
+    src.forEach(function(e) {
+      var f = addDays(e.fecha, shift);
+      if (have[f + '|' + e.titulo + '|' + String(e.hora_inicio || '').substring(0, 5)]) return;
+      rows.push({
+        usuario_id: $scope.currentUser.id, titulo: e.titulo, descripcion: e.descripcion || '',
+        fecha: f, hora_inicio: e.hora_inicio || null, hora_fin: e.hora_fin || null, categoria: e.categoria || 'otro'
+      });
+    });
+    if (!rows.length) { showToast('No hay nada nuevo que copiar', 'err'); return; }
+    sbPost('eventos', rows).then(function(created) {
+      $timeout(function() { loadEvents(); showToast(rows.length + ' eventos copiados ✓', 'ok', undoBatch(created)); });
+    }).catch(function() { $timeout(function() { showToast('Error al copiar', 'err'); }); });
+  };
+  $scope.copyPrevWeek = function() { $scope.duplicateWeek(addDays($scope.weekDays[0].iso, -7), 7); };
+  $scope.repeatToNextWeek = function() { $scope.duplicateWeek($scope.weekDays[0].iso, 7); };
+
+  // ── Carga de trabajo ──
+  $scope.dayHours = function(iso) {
+    var total = 0;
+    $scope.events.forEach(function(e) {
+      if (e.fecha !== iso || !e.hora_inicio) return;
+      var s = timeToMinutes(e.hora_inicio), f = e.hora_fin ? timeToMinutes(e.hora_fin) : s + 60;
+      if (f > s) total += (f - s) / 60;
+    });
+    return Math.round(total * 10) / 10;
+  };
+  $scope.weekHours = function() {
+    return Math.round(($scope.weekDays || []).reduce(function(s, d) { return s + $scope.dayHours(d.iso); }, 0) * 10) / 10;
+  };
+  $scope.dayLoad = function(iso) {
+    var h = $scope.dayHours(iso);
+    return h > 8 ? 'high' : (h > 6 ? 'warn' : 'ok');
+  };
+  $scope.barPct = function(iso) { return Math.min(100, Math.round($scope.dayHours(iso) / 10 * 100)); };
+  $scope.fmtH = function(h) { return (Math.round(h * 10) / 10).toString().replace('.', ',') + ' h'; };
+  $scope.heavyDays = function() {
+    return ($scope.weekDays || []).filter(function(d) { return $scope.dayHours(d.iso) > 8; });
+  };
+  $scope.weekByCat = function() {
+    var map = {};
+    ($scope.weekDays || []).forEach(function(d) {
+      $scope.events.forEach(function(e) {
+        if (e.fecha !== d.iso || !e.hora_inicio) return;
+        var s = timeToMinutes(e.hora_inicio), f = e.hora_fin ? timeToMinutes(e.hora_fin) : s + 60;
+        if (f > s) map[e.categoria] = (map[e.categoria] || 0) + (f - s) / 60;
+      });
+    });
+    var list = Object.keys(map).map(function(k) {
+      return { key: k, label: ($scope.categories[k] || {}).label || k, color: ($scope.categories[k] || {}).color || '#555861', h: Math.round(map[k] * 10) / 10 };
+    }).sort(function(a, b) { return b.h - a.h; });
+    var sig = JSON.stringify(list);           // misma lista => mismo objeto (evita bucles de digest)
+    if (sig !== wbcCache.sig) wbcCache = { sig: sig, val: list };
+    return wbcCache.val;
+  };
+  var wbcCache = { sig: '', val: [] };
 
   $scope.blockStyle = function(ev) {
     if (!ev.hora_inicio) return { top: '0px', height: '20px' };
@@ -485,6 +653,44 @@ angular.module('nexusApp', [])
 
   $scope.pendingTasks = function() { return $scope.tasks.filter(function(t) { return !t.completada; }).length; };
   $scope.doneTasks    = function() { return $scope.tasks.filter(function(t) {  return t.completada;  }).length; };
+
+  $scope.taskGroupsList = [];
+  function tdate(t) { return t.fecha_limite ? String(t.fecha_limite).substring(0, 10) : ''; }
+  function buildTaskGroups() {
+    var hoy = toISO(new Date()), semana = addDays(hoy, 7), f = $scope.taskFilter;
+    var pri = { alta: 0, media: 1, baja: 2 };
+    function cmp(a, b) {
+      var da = tdate(a) || '9999', db = tdate(b) || '9999';
+      if (da !== db) return da < db ? -1 : 1;
+      return (pri[a.prioridad] == null ? 1 : pri[a.prioridad]) - (pri[b.prioridad] == null ? 1 : pri[b.prioridad]);
+    }
+    var pend = $scope.tasks.filter(function(t) { return !t.completada; }).sort(cmp);
+    var done = $scope.tasks.filter(function(t) { return t.completada; });
+    var g = [];
+    function add(key, label, items) { if (items.length) g.push({ key: key, label: label, items: items }); }
+    if (f !== 'hechas') {
+      add('vencidas', 'Vencidas', pend.filter(function(t) { return tdate(t) && tdate(t) < hoy; }));
+      add('hoy', 'Hoy', pend.filter(function(t) { return tdate(t) === hoy; }));
+      add('semana', 'Próximos 7 días', pend.filter(function(t) { return tdate(t) > hoy && tdate(t) <= semana; }));
+      add('despues', 'Más adelante', pend.filter(function(t) { return tdate(t) > semana; }));
+      add('sinfecha', 'Sin fecha', pend.filter(function(t) { return !tdate(t); }));
+    }
+    if (f !== 'pendientes') {
+      var shown = f === 'hechas' ? done : done.slice(0, 8);
+      if (shown.length) g.push({ key: 'hechas', label: 'Completadas', total: done.length, items: shown });
+    }
+    $scope.taskGroupsList = g;
+  }
+  $scope.setTaskFilter = function(f) { $scope.taskFilter = f; buildTaskGroups(); };
+  $scope.quickDate = function(n) { return addDays(toISO(new Date()), n); };
+  $scope.taskDueLabel = function(t) {
+    var d = tdate(t); if (!d) return '';
+    var hoy = toISO(new Date());
+    if (d === hoy) return 'Hoy';
+    if (d === addDays(hoy, 1)) return 'Mañana';
+    return null;
+  };
+  $scope.taskOverdue = function(t) { return !t.completada && tdate(t) && tdate(t) < toISO(new Date()); };
 
   $scope.addTaskEnter = function($event) { if ($event.keyCode === 13) $scope.addTask(); };
   $scope.editingTask   = null;
@@ -532,35 +738,70 @@ angular.module('nexusApp', [])
   };
 
   $scope.toggleTask = function(t) {
-    var nuevoValor = !t.completada;
-    sbPatch('tareas', 'id=eq.' + t.id, { completada: nuevoValor }).then(function() {
-      $timeout(function() { loadTasks(); });
+    t.completada = !t.completada;
+    buildTaskGroups();
+    sbPatch('tareas', 'id=eq.' + t.id, { completada: t.completada }).catch(function() {
+      $timeout(function() { t.completada = !t.completada; buildTaskGroups(); showToast('No se pudo guardar', 'err'); });
     });
   };
 
   $scope.deleteTask = function(t) {
-    if (!confirm('¿Eliminar esta tarea?')) return;
     sbDelete('tareas', 'id=eq.' + t.id).then(function() {
-      $timeout(function() { loadTasks(); showToast('Tarea eliminada'); });
+      $timeout(function() { loadTasks(); showToast('Tarea eliminada', 'ok', undoInsert('tareas', t, loadTasks, 'Tarea')); });
     });
   };
 
   // ── Finanzas ──────────────────────────────────────────
-  $scope.totalIncome  = function() { return $scope.transactions.filter(function(t) { return t.tipo==='ingreso'; }).reduce(function(s,t) { return s+(+t.monto||0); }, 0); };
-  $scope.totalExpense = function() { return $scope.transactions.filter(function(t) { return t.tipo==='gasto';   }).reduce(function(s,t) { return s+(+t.monto||0); }, 0); };
+  var MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  function curMonth() { return toISO(new Date()).substring(0, 7); }
+  $scope.finMonth = curMonth();
+  function monthKey(t) { return String(t.fecha || '').substring(0, 7); }
+  $scope.monthTrans = function() { return $scope.transactions.filter(function(t) { return monthKey(t) === $scope.finMonth; }); };
+  $scope.finMonthLabel = function() { var p = $scope.finMonth.split('-'); return MESES[+p[1] - 1] + ' ' + p[0]; };
+  $scope.shiftMonth = function(n) {
+    var p = $scope.finMonth.split('-');
+    $scope.finMonth = toISO(new Date(+p[0], +p[1] - 1 + n, 1)).substring(0, 7);
+  };
+  $scope.isCurrentMonth = function() { return $scope.finMonth === curMonth(); };
+  $scope.goCurrentMonth = function() { $scope.finMonth = curMonth(); };
+  $scope.expenseDelta = function() {
+    var p = $scope.finMonth.split('-');
+    var prev = toISO(new Date(+p[0], +p[1] - 2, 1)).substring(0, 7);
+    var prevExp = $scope.transactions.filter(function(t) { return t.tipo === 'gasto' && monthKey(t) === prev; })
+      .reduce(function(s, t) { return s + (+t.monto || 0); }, 0);
+    if (!prevExp) return null;
+    return Math.round(($scope.totalExpense() - prevExp) / prevExp * 100);
+  };
+  $scope.exportCSV = function() {
+    var rows = [['Fecha', 'Tipo', 'Categoría', 'Descripción', 'Monto']];
+    $scope.transactions.slice().sort(function(a, b) { return String(a.fecha) < String(b.fecha) ? -1 : 1; }).forEach(function(t) {
+      rows.push([String(t.fecha).substring(0, 10), t.tipo, t.categoria, t.descripcion, t.monto]);
+    });
+    var csv = '\ufeff' + rows.map(function(r) {
+      return r.map(function(c) { return '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"'; }).join(',');
+    }).join('\r\n');
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = 'nexus-finanzas-' + toISO(new Date()) + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    showToast('Respaldo descargado ✓');
+  };
+
+  $scope.totalIncome  = function() { return $scope.monthTrans().filter(function(t) { return t.tipo==='ingreso'; }).reduce(function(s,t) { return s+(+t.monto||0); }, 0); };
+  $scope.totalExpense = function() { return $scope.monthTrans().filter(function(t) { return t.tipo==='gasto';   }).reduce(function(s,t) { return s+(+t.monto||0); }, 0); };
   $scope.balance      = function() { return $scope.totalIncome() - $scope.totalExpense(); };
   $scope.savingsRate  = function() { var i=$scope.totalIncome(); return i ? Math.max(0,Math.round($scope.balance()/i*100)) : 0; };
   $scope.spentPct     = function() { var i=$scope.totalIncome(); return i ? Math.min(Math.round($scope.totalExpense()/i*100),100) : 0; };
 
   $scope.filteredTrans = function() {
     if ($scope.transFilter === 'historial') return [];
-    if ($scope.transFilter === 'todos') return $scope.transactions;
-    return $scope.transactions.filter(function(t) { return t.tipo === $scope.transFilter; });
+    if ($scope.transFilter === 'todos') return $scope.monthTrans();
+    return $scope.monthTrans().filter(function(t) { return t.tipo === $scope.transFilter; });
   };
 
   $scope.expenseByCategory = function() {
     var map = {};
-    $scope.transactions.filter(function(t) { return t.tipo==='gasto'; }).forEach(function(t) {
+    $scope.monthTrans().filter(function(t) { return t.tipo==='gasto'; }).forEach(function(t) {
       map[t.categoria] = (map[t.categoria]||0) + (+t.monto||0);
     });
     var sorted = {};
@@ -609,6 +850,7 @@ angular.module('nexusApp', [])
         $scope.savingTrans = false;
         $scope.showTransModal = false;
         $scope.editingTrans = null;
+        if (body.fecha) $scope.finMonth = String(body.fecha).substring(0, 7);
         loadTrans();
         showToast($scope.editingTrans ? 'Actualizado ✓' : 'Transacción guardada ✓');
       });
@@ -620,13 +862,19 @@ angular.module('nexusApp', [])
   $scope.deleteTrans = function(t) {
     if (!confirm('¿Eliminar esta transacción?')) return;
     sbDelete('transacciones', 'id=eq.' + t.id).then(function() {
-      $timeout(function() { loadTrans(); showToast('Eliminado'); });
+      $timeout(function() { loadTrans(); showToast('Movimiento eliminado', 'ok', undoInsert('transacciones', t, loadTrans, 'Movimiento')); });
     });
   };
 
   $scope.setView = function(v) {
+    if ($scope.mobileApp && v !== 'agenda' && v !== 'finanzas') v = 'agenda';
     $scope.activeView = v;
-    if (v === 'dashboard') pickQuote();
+    if (v === 'dashboard') {
+      pickQuote();
+      $scope.finMonth = curMonth();
+      $scope.weekOffset = 0; buildWeek();
+    }
+    try { window.scrollTo(0, 0); } catch (e) {}
   };
 
   var QUOTES = [
@@ -645,16 +893,57 @@ angular.module('nexusApp', [])
   }
   pickQuote();
 
+  // ── Resumen del día ──
+  $scope.greeting = function() {
+    var h = new Date().getHours();
+    return h < 12 ? 'Buenos días' : (h < 19 ? 'Buenas tardes' : 'Buenas noches');
+  };
+  $scope.dayBrief = function() {
+    var hoy = toISO(new Date());
+    var ev = $scope.eventsForDay(hoy).length;
+    var tk = $scope.tasks.filter(function(t) { return !t.completada && tdate(t) && tdate(t) <= hoy; }).length;
+    var cb = ($scope.cobrosVencidos ? $scope.cobrosVencidos().length : 0) + ($scope.cobrosHoy ? $scope.cobrosHoy().length : 0);
+    var parts = [];
+    parts.push(ev ? ev + (ev === 1 ? ' evento' : ' eventos') + ' en tu agenda' : 'Sin eventos en tu agenda');
+    parts.push(tk ? tk + (tk === 1 ? ' tarea' : ' tareas') + ' para hoy o vencidas' : 'tareas al día');
+    if (cb) parts.push(cb + (cb === 1 ? ' cobro' : ' cobros') + ' por gestionar');
+    var sb = ($scope.stockBajo ? $scope.stockBajo().length : 0);
+    if (sb) parts.push(sb + (sb === 1 ? ' fragancia' : ' fragancias') + ' por reponer');
+    return 'Hoy: ' + parts.join(' · ') + '.';
+  };
+  $scope.goNewTask = function() {
+    $scope.setView('tareas');
+    $timeout(function() { var i = document.querySelector('.task-quick .task-input'); if (i) i.focus(); }, 120);
+  };
+  $scope.fabVisible = function() {
+    return ['dashboard', 'agenda', 'semana', 'tareas', 'finanzas', 'negocio'].indexOf($scope.activeView) >= 0;
+  };
+  $scope.fabAction = function() {
+    var v = $scope.activeView;
+    if (v === 'tareas') $scope.goNewTask();
+    else if (v === 'finanzas') $scope.openTransModal('gasto');
+    else if (v === 'negocio') $scope.openVentaModal();
+    else $scope.openEventModal(null);
+  };
+  // línea de "ahora" en la semana
+  $scope.nowTop = function() {
+    var n = new Date(), m = n.getHours() * 60 + n.getMinutes();
+    var top = (m - $scope.gridStart * 60) / 60 * $scope.cellH;
+    return top >= 0 && top <= $scope.gridHours.length * $scope.cellH ? top : -1;
+  };
+  (function tick() { $timeout(tick, 60000); })();
+
   $scope.eventsToday = function() {
     return $scope.eventsForDay(new Date()).length;
   };
 
   $scope.urgentTasks = function() {
+    var hoy = toISO(new Date());
     return $scope.tasks.filter(function(t) {
-      return !t.completada && (t.prioridad === 'alta' || t.prioridad === 'media');
-    }).sort(function(a,b) {
-      var p = {alta:0,media:1,baja:2};
-      return (p[a.prioridad]||2) - (p[b.prioridad]||2);
+      return !t.completada && ((tdate(t) && tdate(t) <= hoy) || t.prioridad === 'alta');
+    }).sort(function(a, b) {
+      var da = tdate(a) || '9999', db = tdate(b) || '9999';
+      return da < db ? -1 : (da > db ? 1 : 0);
     });
   };
 
@@ -678,45 +967,32 @@ angular.module('nexusApp', [])
   $scope.loadHistorial = function() { _loadHistorial(); };
 
   $scope.openCerrarMesModal = function() {
-    var now = new Date();
-    var meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
-                 'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    $scope.cerrarMesLabel = meses[now.getMonth()] + ' ' + now.getFullYear();
+    $scope.cerrarMesLabel = $scope.finMonthLabel();
     $scope.showCerrarMesModal = true;
   };
 
+  // Guarda una copia del resumen del mes. NO borra ninguna transacción.
   $scope.cerrarMes = function() {
     if (!$scope.cerrarMesLabel || $scope.savingCierre) return;
     $scope.savingCierre = true;
-    var ingresos = $scope.totalIncome();
-    var gastos   = $scope.totalExpense();
-    var balance  = $scope.balance();
-    var ahorro   = $scope.savingsRate();
-
     sbPost('historial_meses', {
       usuario_id:         $scope.currentUser.id,
       mes_label:          $scope.cerrarMesLabel,
-      ingresos:           ingresos,
-      gastos:             gastos,
-      balance:            balance,
-      tasa_ahorro:        ahorro,
-      transacciones_json: $scope.transactions
-    }).then(function() {
-      return sbDelete('transacciones', 'usuario_id=eq.' + $scope.currentUser.id);
+      ingresos:           $scope.totalIncome(),
+      gastos:             $scope.totalExpense(),
+      balance:            $scope.balance(),
+      tasa_ahorro:        $scope.savingsRate(),
+      transacciones_json: $scope.monthTrans()
     }).then(function() {
       $timeout(function() {
         $scope.savingCierre = false;
         $scope.showCerrarMesModal = false;
-        $scope.transactions = [];
         $scope.transFilter = 'historial';
         _loadHistorial();
-        showToast('✓ Mes cerrado y guardado');
+        showToast('✓ Resumen guardado · tus movimientos siguen intactos');
       });
     }).catch(function() {
-      $timeout(function() {
-        $scope.savingCierre = false;
-        showToast('Error al cerrar mes', 'err');
-      });
+      $timeout(function() { $scope.savingCierre = false; showToast('Error al guardar', 'err'); });
     });
   };
 
@@ -760,8 +1036,9 @@ angular.module('nexusApp', [])
       }).catch(function() { $timeout(function() { $scope.loadingFragancias = false; }); });
   }
 
+  function hit(q, txt) { return !q || String(txt || '').toLowerCase().indexOf(String(q).toLowerCase()) !== -1; }
   $scope.filteredFragancias = function() {
-    var list = $scope.fragancias || [];
+    var list = ($scope.fragancias || []).filter(function(f) { return hit($scope.invQ, f.nombre); });
     if ($scope.invFilter === 'disponibles') return list.filter(function(f) { return +f.stock >= 3; });
     if ($scope.invFilter === 'poco')        return list.filter(function(f) { return +f.stock > 0 && +f.stock < 3; });
     if ($scope.invFilter === 'agotadas')    return list.filter(function(f) { return +f.stock <= 0; });
@@ -806,9 +1083,10 @@ angular.module('nexusApp', [])
   $scope.clientesSinPagar = function() { return $scope.ventasNegocio.filter(function(v){ return !isPagado(v)&&+v.abono===0; }).length; };
 
   $scope.filteredVentas = function() {
-    if ($scope.ventaFilter==='pagadas') return $scope.ventasNegocio.filter(function(v){ return isPagado(v); });
-    if ($scope.ventaFilter==='deben')   return $scope.ventasNegocio.filter(function(v){ return !isPagado(v); });
-    return $scope.ventasNegocio;
+    var base = $scope.ventasNegocio.filter(function(v) { return hit($scope.ventaQ, v.cliente + ' ' + (v.fragancias_desc || '')); });
+    if ($scope.ventaFilter==='pagadas') return base.filter(function(v){ return isPagado(v); });
+    if ($scope.ventaFilter==='deben')   return base.filter(function(v){ return !isPagado(v); });
+    return base;
   };
 
   function cobroFecha(v) { return v.fecha_cobro ? String(v.fecha_cobro).substring(0,10) : ''; }
@@ -1079,6 +1357,60 @@ angular.module('nexusApp', [])
       .then(function() { $timeout(function() { loadFragancias(); showToast('Fragancia eliminada'); }); });
   };
 
+  // ── Resumen contable del negocio ──────────────────────
+  // Costo = inversión en materiales repartida entre las unidades producidas (costo promedio).
+  function memo(cache, list) {
+    var sig = JSON.stringify(list);
+    if (sig !== cache.sig) { cache.sig = sig; cache.val = list; }
+    return cache.val;
+  }
+  var cDeudores = { sig: '', val: [] }, cTop = { sig: '', val: [] };
+  $scope.unidadesProducidas = function() { return ($scope.fragancias || []).reduce(function(s, f) { return s + (+f.cantidad || +f.stock || 0); }, 0); };
+  $scope.unidadesVendidas   = function() { return $scope.ventasNegocio.reduce(function(s, v) { return s + (+v.cantidad || 0); }, 0); };
+  $scope.costoUnitario      = function() { var u = $scope.unidadesProducidas(); return u ? $scope.totalInversionMat() / u : 0; };
+  $scope.costoVendido       = function() { return $scope.unidadesVendidas() * $scope.costoUnitario(); };
+  $scope.utilidadEstimada   = function() { return $scope.totalVendido() - $scope.costoVendido(); };
+  $scope.margenPct          = function() { var t = $scope.totalVendido(); return t ? Math.round($scope.utilidadEstimada() / t * 100) : 0; };
+  $scope.recuperadoPct      = function() { var i = $scope.totalInversionMat(); return i ? Math.min(100, Math.round($scope.totalRecibido() / i * 100)) : 0; };
+  $scope.valorInventario    = function() { return ($scope.fragancias || []).reduce(function(s, f) { return s + (+f.stock || 0) * (+f.precio_venta || 0); }, 0); };
+  $scope.ventasDelMes = function() {
+    var m = toISO(new Date()).substring(0, 7);
+    return $scope.ventasNegocio.filter(function(v) { return String(v.fecha || v.creado_en || '').substring(0, 7) === m; })
+      .reduce(function(s, v) { return s + (+v.valor_total || 0); }, 0);
+  };
+  $scope.stockBajo = function() { return ($scope.fragancias || []).filter(function(f) { return +f.stock < 3; }).sort(function(a, b) { return a.stock - b.stock; }); };
+  $scope.deudores = function() {
+    var map = {};
+    $scope.ventasNegocio.forEach(function(v) {
+      if (isPagado(v)) return;
+      var d = (+v.valor_total || 0) - (+v.abono || 0);
+      if (d > 0) map[v.cliente] = (map[v.cliente] || 0) + d;
+    });
+    return memo(cDeudores, Object.keys(map).map(function(k) { return { cliente: k, debe: map[k] }; }).sort(function(a, b) { return b.debe - a.debe; }).slice(0, 6));
+  };
+  $scope.masVendidas = function() {
+    var map = {};
+    $scope.ventasNegocio.forEach(function(v) {
+      if (!v.fragancias_desc || v.fragancias_desc.indexOf('?') !== -1) return;
+      v.fragancias_desc.split(', ').forEach(function(p) {
+        var i = p.lastIndexOf(' x'), n = p, q = 1;
+        if (i > 0 && !isNaN(p.substring(i + 2))) { n = p.substring(0, i); q = +p.substring(i + 2); }
+        n = n.trim(); if (n) map[n] = (map[n] || 0) + q;
+      });
+    });
+    return memo(cTop, Object.keys(map).map(function(k) { return { nombre: k, und: map[k] }; }).sort(function(a, b) { return b.und - a.und; }).slice(0, 5));
+  };
+  $scope.adjustStock = function(f, n) {
+    var old = { stock: f.stock, cantidad: f.cantidad };
+    var nuevo = Math.max(0, (+f.stock || 0) + n);
+    var body = { stock: nuevo };
+    if (nuevo > (+f.cantidad || 0)) body.cantidad = nuevo;
+    f.stock = nuevo; if (body.cantidad) f.cantidad = body.cantidad;
+    sbPatch('fragancias', 'id=eq.' + f.id, body).catch(function() {
+      $timeout(function() { f.stock = old.stock; f.cantidad = old.cantidad; showToast('No se pudo actualizar el stock', 'err'); });
+    });
+  };
+
   // Mayoristas
   $scope.planLabel = function(plan) {
     return { '7a14':'Starter', '15a22':'Pro', '23mas':'Elite' }[plan] || plan;
@@ -1143,6 +1475,7 @@ angular.module('nexusApp', [])
   $scope.savePedidoMayorista = function() {
     if (!$scope.newPedidoMay.cantidad || !$scope.newPedidoMay.precio_unitario) return;
     var total = $scope.newPedidoMay.cantidad * $scope.newPedidoMay.precio_unitario;
+    var target = $scope.pedidoMayoristaTarget;
     sbPost('pedidos_mayorista', {
       mayorista_id: $scope.pedidoMayoristaTarget.id,
       usuario_id: $scope.currentUser.id,
@@ -1152,14 +1485,70 @@ angular.module('nexusApp', [])
       estado: $scope.newPedidoMay.estado,
       fecha: $scope.newPedidoMay.fecha
     }).then(function() {
-      var nuevoTotal = (+$scope.pedidoMayoristaTarget.total_pedidos || 0) + total;
-      sbPatch('mayoristas', 'id=eq.' + $scope.pedidoMayoristaTarget.id, { total_pedidos: nuevoTotal });
+      var nuevoTotal = (+target.total_pedidos || 0) + total;
+      return sbPatch('mayoristas', 'id=eq.' + target.id, { total_pedidos: nuevoTotal });
+    }).then(function() {
       $timeout(function() {
         $scope.showPedidoMayModal = false;
-        loadMayoristas();
+        loadMayoristas(); loadPedidosMay();
         showToast('Pedido registrado ✓');
       });
+    }).catch(function() { $timeout(function() { showToast('Error al guardar el pedido', 'err'); }); });
+  };
+
+  // ── Pedidos de mayoristas ──
+  $scope.pedidosMay = [];
+  function loadPedidosMay() {
+    if (!$scope.currentUser) return;
+    sbGet('pedidos_mayorista', { usuario_id: 'eq.' + $scope.currentUser.id, select: '*', order: 'fecha.desc' })
+      .then(function(rows) { $timeout(function() { $scope.pedidosMay = rows || []; }); })
+      .catch(function() {});
+  }
+  $scope.pedidosDe = function(m) { return $scope.pedidosMay.filter(function(p) { return p.mayorista_id === m.id; }); };
+  $scope.pedTotal  = function(p) { return (+p.cantidad || 0) * (+p.precio_unitario || 0); };
+  $scope.pedDebe   = function(p) { return Math.max(0, $scope.pedTotal(p) - (+p.abono || 0)); };
+  $scope.mayTotal  = function(m) {
+    var l = $scope.pedidosDe(m);
+    return l.length ? l.reduce(function(s, p) { return s + $scope.pedTotal(p); }, 0) : (+m.total_pedidos || 0);
+  };
+  $scope.mayDebe   = function(m) { return $scope.pedidosDe(m).reduce(function(s, p) { return s + $scope.pedDebe(p); }, 0); };
+  $scope.mayUnidades = function(m) { return $scope.pedidosDe(m).reduce(function(s, p) { return s + (+p.cantidad || 0); }, 0); };
+  $scope.mayVendidoTotal = function() { return $scope.pedidosMay.reduce(function(s, p) { return s + $scope.pedTotal(p); }, 0); };
+  $scope.mayDebeTotal    = function() { return $scope.pedidosMay.reduce(function(s, p) { return s + $scope.pedDebe(p); }, 0); };
+  $scope.mayActivos      = function() { return $scope.mayoristas.filter(function(m) { return m.estado === 'activo'; }).length; };
+  $scope.cyclePedidoEstado = function(p) {
+    var next = { pendiente: 'enviado', enviado: 'entregado', entregado: 'pendiente' }[p.estado] || 'pendiente';
+    var old = p.estado; p.estado = next;
+    sbPatch('pedidos_mayorista', 'id=eq.' + p.id, { estado: next }).catch(function() { $timeout(function() { p.estado = old; showToast('No se pudo actualizar', 'err'); }); });
+  };
+  $scope.pagarPedido = function(p) {
+    var old = p.abono; p.abono = $scope.pedTotal(p);
+    sbPatch('pedidos_mayorista', 'id=eq.' + p.id, { abono: p.abono }).then(function() { $timeout(function() { showToast('Pedido pagado ✓'); }); })
+      .catch(function() { $timeout(function() { p.abono = old; showToast('No se pudo guardar', 'err'); }); });
+  };
+  $scope.showPedAbonoModal = false; $scope.pedAbono = { p: null, monto: 0 };
+  $scope.openPedAbono = function(p) { $scope.pedAbono = { p: p, monto: 0 }; $scope.showPedAbonoModal = true; };
+  $scope.savePedAbono = function() {
+    var p = $scope.pedAbono.p, total = (+p.abono || 0) + (+$scope.pedAbono.monto || 0);
+    if (!(+$scope.pedAbono.monto > 0)) return;
+    sbPatch('pedidos_mayorista', 'id=eq.' + p.id, { abono: total }).then(function() {
+      $timeout(function() { p.abono = total; $scope.showPedAbonoModal = false; showToast('Abono registrado ✓'); });
+    }).catch(function() { $timeout(function() { showToast('No se pudo guardar', 'err'); }); });
+  };
+  $scope.deletePedido = function(p) {
+    if (!confirm('¿Eliminar este pedido?')) return;
+    sbDelete('pedidos_mayorista', 'id=eq.' + p.id).then(function() {
+      $timeout(function() { loadPedidosMay(); showToast('Pedido eliminado', 'ok', undoInsert('pedidos_mayorista', p, loadPedidosMay, 'Pedido')); });
     });
+  };
+  $scope.toggleRev = function(m) { m._open = !m._open; };
+  function waNum(m) { var d = String(m.telefono || '').replace(/\D/g, ''); if (d.length === 10) d = '57' + d; return d; }
+  $scope.waLink = function(m) { var n = waNum(m); return n ? 'https://wa.me/' + n : ''; };
+  $scope.waCobro = function(m) {
+    var n = waNum(m); if (!n) return '';
+    var debe = $scope.mayDebe(m);
+    var msg = 'Hola ' + m.nombre + ', ' + (debe > 0 ? 'te escribo para recordarte el saldo pendiente de $' + Number(debe).toLocaleString('es-CO') + '. ¡Gracias!' : 'quería saber cómo vas con tus ventas. ¡Gracias!');
+    return 'https://wa.me/' + n + '?text=' + encodeURIComponent(msg);
   };
 
   // ── PRODUCCIÓN ───────────────────────────────────────

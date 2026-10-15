@@ -1,0 +1,154 @@
+/* ============================================================
+   NEXUS — theme.css (Paso 2: diseño y experiencia)
+   Capa visual sobre styles.css. Se carga al final.
+   ============================================================ */
+:root {
+  --bg: #0a0a10;
+  --bg2: #101018;
+  --bg3: #151520;
+  --bg4: #1c1c2a;
+  --bg5: #262638;
+  --border: rgba(255,255,255,.07);
+  --border2: rgba(255,255,255,.14);
+  --text2: #adadc9;
+  --text3: #7b7b98;
+  --accent: #7b5ea7;
+  --accent2: #a487dc;
+  --accent3: #cdb6fa;
+  --grad: linear-gradient(135deg, #8a63d2 0%, #b28cf0 100%);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow: 0 10px 30px rgba(0,0,0,.35);
+}
+body { background: radial-gradient(1200px 500px at 70% -10%, rgba(123,94,167,.12), transparent 60%), var(--bg); -webkit-font-smoothing: antialiased; }
+.main { max-width: 1240px; }
+.subtitle, .view-header p { text-transform: none !important; letter-spacing: 0; color: var(--text2); }
+.view-header h1 { letter-spacing: -.02em; }
+.kpi-value, .dsc-num, .trans-amount, .dfg-val, .dci-monto, .hist-kpi strong, .dw-h, .wgdh-load { font-variant-numeric: tabular-nums; }
+
+/* tarjetas */
+.dash-panel, .dash-stat-card, .kpi-card, .week-load, .budget-track, .hist-card, .task-quick, .trans-item, .task-item, .event-card {
+  background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.01)) , var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.dash-stat-card, .kpi-card { box-shadow: var(--shadow); }
+.task-item, .trans-item, .event-card { border-radius: 12px; transition: transform .15s ease, border-color .15s ease; }
+.task-item:hover, .trans-item:hover, .event-card:hover { border-color: var(--border2); transform: translateY(-1px); }
+.dash-panel-header span { color: var(--text2); }
+
+/* botones */
+.btn-primary { background: var(--grad); border: 0; box-shadow: 0 6px 18px rgba(123,94,167,.35); transition: transform .15s, box-shadow .15s; }
+.btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(123,94,167,.5); }
+.btn-primary:disabled { opacity: .45; box-shadow: none; }
+.btn-ghost { border-color: var(--border2); }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent2); outline-offset: 2px; }
+input, select, textarea { transition: border-color .15s, box-shadow .15s; }
+input:focus, select:focus, textarea:focus { border-color: var(--accent2) !important; box-shadow: 0 0 0 3px rgba(164,135,220,.18); }
+
+/* sidebar */
+.nav-item { border-radius: 12px; position: relative; }
+.nav-item.active { background: linear-gradient(90deg, rgba(164,135,220,.2), rgba(164,135,220,.05)); color: var(--accent3); }
+.nav-item.active::before { content: ''; position: absolute; left: -10px; top: 20%; bottom: 20%; width: 3px; border-radius: 3px; background: var(--grad); }
+
+/* dashboard */
+.dash-hero { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.1rem; padding: 1.2rem 1.4rem; border-radius: var(--radius); border: 1px solid rgba(164,135,220,.25); background: linear-gradient(120deg, rgba(123,94,167,.28), rgba(123,94,167,.06) 60%), var(--bg3); }
+.dh-eyebrow { font-size: .72rem; text-transform: uppercase; letter-spacing: .14em; color: var(--accent3); margin-bottom: .3rem; }
+.dh-brief { font-size: 1.02rem; font-weight: 500; line-height: 1.45; max-width: 560px; }
+.dh-actions { display: flex; gap: .45rem; flex-wrap: wrap; }
+.dh-actions .chip { background: rgba(255,255,255,.08); color: var(--text); border-color: var(--border2); padding: .45rem .9rem; }
+.dh-actions .chip:hover { background: rgba(255,255,255,.16); }
+.dash-stats { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+
+/* semana: línea de ahora */
+.wg-now { position: absolute; left: 0; right: 0; height: 2px; background: var(--red); z-index: 3; pointer-events: none; }
+.wg-now::before { content: ''; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--red); }
+
+/* botón flotante + navegación móvil */
+.fab { display: none; }
+@media (max-width: 640px) {
+  .main { padding: 1rem .9rem 7.5rem; }
+  .fab { display: flex; align-items: center; justify-content: center; position: fixed; right: 1rem; bottom: 4.9rem; width: 54px; height: 54px; border-radius: 50%; border: 0; background: var(--grad); color: #fff; font-size: 1.7rem; line-height: 1; box-shadow: 0 10px 26px rgba(123,94,167,.55); z-index: 120; cursor: pointer; }
+  .fab:active { transform: scale(.94); }
+  .toast { bottom: 9rem; }
+  .view-header { flex-direction: column; align-items: stretch; gap: .7rem; }
+  .header-actions, .week-tools { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: .45rem; padding-bottom: 2px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .header-actions::-webkit-scrollbar, .week-tools::-webkit-scrollbar { display: none; }
+  .header-actions > *, .week-tools > * { white-space: nowrap; flex-shrink: 0; }
+  .dash-hero { padding: 1rem; }
+  .dh-brief { font-size: .95rem; }
+  .dash-stats { grid-template-columns: 1fr 1fr; }
+  .mobile-nav-item span { font-size: .62rem; }
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* ── Negocio y mayoristas (Paso 3) ── */
+.neg-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(290px,1fr)); gap:1rem; }
+.neg-kpi-row { grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); margin-bottom:.8rem; }
+.kpi-sub { font-size:.72rem; color:var(--text2); margin-top:2px; }
+.neg-hint { font-size:.74rem; color:var(--text3); margin:.2rem 0 1rem; }
+.mini-bar { height:5px; border-radius:99px; background:var(--bg5); margin-top:6px; overflow:hidden; width:100%; }
+.mini-bar i { display:block; height:100%; background:var(--grad); border-radius:99px; }
+.search-input { background:var(--bg3); border:1px solid var(--border2); border-radius:99px; padding:.5rem 1rem; color:var(--text); font:500 .82rem 'Sora',sans-serif; min-width:200px; flex:1; max-width:320px; }
+.stepper { display:flex; align-items:center; justify-content:space-between; gap:.5rem; margin-top:.7rem; background:var(--bg4); border-radius:10px; padding:.25rem; }
+.stepper button { width:34px; height:34px; border-radius:8px; border:0; background:var(--bg5); color:var(--text); font-size:1.15rem; cursor:pointer; }
+.stepper button:hover:not(:disabled) { background:var(--accent-dim); color:var(--accent3); }
+.stepper button:disabled { opacity:.35; cursor:default; }
+.stepper span { font-size:.78rem; color:var(--text2); }
+.stepper b { color:var(--text); font-size:.95rem; }
+.ped-toggle { background:none; border:0; color:var(--accent3); font:600 .78rem 'Sora',sans-serif; cursor:pointer; padding:.5rem 0 .3rem; text-align:left; }
+.ped-list { display:flex; flex-direction:column; gap:.4rem; margin-bottom:.6rem; }
+.ped-row { display:grid; grid-template-columns:1fr auto; align-items:center; gap:.6rem; background:var(--bg4); border-radius:10px; padding:.55rem .7rem; font-size:.8rem; }
+.ped-main, .ped-money { display:flex; flex-direction:column; }
+.ped-main small, .ped-money small { color:var(--text3); font-size:.68rem; }
+.ped-money { text-align:right; }
+.td-ok { color:var(--green) !important; }
+.ped-estado { border:0; border-radius:99px; padding:.2rem .6rem; font:600 .66rem 'Sora',sans-serif; text-transform:uppercase; letter-spacing:.06em; cursor:pointer; background:var(--bg5); color:var(--text2); }
+.ped-estado.pe-enviado { background:var(--blue-bg); color:var(--blue); }
+.ped-estado.pe-entregado { background:var(--green-bg); color:var(--green); }
+.ped-estado.pe-pendiente { background:var(--amber-bg); color:var(--amber); }
+.ped-actions { display:flex; gap:.25rem; justify-self:end; }
+.ped-estado { justify-self:start; }
+.ped-actions button { width:28px; height:28px; border-radius:7px; border:0; background:var(--bg5); color:var(--text2); cursor:pointer; }
+.ped-actions button:hover { color:var(--text); background:var(--bg3); }
+.wa-btn { font-size:.75rem; padding:.35rem .7rem; color:var(--green); text-decoration:none; display:inline-flex; align-items:center; }
+@media (max-width:640px) {
+  .search-input { max-width:none; width:100%; flex-basis:100%; }
+}
+
+/* ── Formulario rápido de evento ── */
+.modal-quick.qe { width: min(460px, 94vw); padding: 1.3rem 1.4rem 1.2rem; border-radius: 20px; }
+.qe-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:.6rem; }
+.qe-title-lbl { font-size:.7rem; text-transform:uppercase; letter-spacing:.14em; color:var(--accent3); font-weight:600; }
+.qe .quick-title-input { font-size:1.25rem; margin-bottom:.9rem; }
+.qe-cats { display:flex; flex-wrap:wrap; gap:.35rem; margin-bottom:1rem; }
+.qe-cat { display:inline-flex; align-items:center; gap:.4rem; background:var(--bg4); border:1px solid var(--border); color:var(--text2); border-radius:99px; padding:.3rem .7rem; font:500 .75rem 'Sora',sans-serif; cursor:pointer; transition:.15s; }
+.qe-cat i { width:9px; height:9px; border-radius:50%; display:inline-block; }
+.qe-cat:hover { border-color:var(--border2); color:var(--text); }
+.qe-cat.on { background:var(--accent-dim); border-color:var(--accent2); color:var(--text); font-weight:600; }
+.qe-block { background:var(--bg4); border:1px solid var(--border); border-radius:14px; padding:.8rem .9rem; margin-bottom:.7rem; }
+.qe-lbl { display:block; font-size:.66rem; text-transform:uppercase; letter-spacing:.12em; color:var(--text3); margin-bottom:.5rem; }
+.qe-when { display:flex; align-items:center; gap:.45rem; flex-wrap:wrap; }
+.qe-input { background:var(--bg2); border:1px solid var(--border2); border-radius:10px; color:var(--text); font:500 .85rem 'Sora',sans-serif; padding:.5rem .6rem; min-width:0; }
+.qe-date { flex:1 1 100%; }
+.qe-time { flex:1 1 0; min-width:118px; }
+.qe-arrow { color:var(--text3); }
+.qe-day { font-size:.74rem; color:var(--text2); margin:.45rem 0 .55rem; text-transform:none; }
+.qe-day::first-letter { text-transform:uppercase; }
+.qe-chips { display:flex; flex-wrap:wrap; gap:.35rem; }
+.qe-weeks { display:flex; align-items:center; gap:.45rem; flex-wrap:wrap; margin-top:.65rem; font-size:.78rem; color:var(--text2); }
+.qe-weeks b { color:var(--text); min-width:1.4em; text-align:center; }
+.qe-step { width:28px; height:28px; border-radius:8px; border:0; background:var(--bg5); color:var(--text); cursor:pointer; font-size:1rem; }
+.qe-step:hover { background:var(--accent-dim); color:var(--accent3); }
+.modal-quick.qe .quick-actions { display:flex; align-items:center; gap:.5rem; margin-top:1rem; }
+
+
+/* ── App móvil (PWA): solo Semana y Finanzas ── */
+.agenda-weeknav { display:flex; align-items:center; justify-content:center; gap:.7rem; margin-bottom:.7rem; font-weight:600; font-size:.9rem; }
+.agenda-load { margin-bottom:.7rem; }
+body.app-mobile { padding-top: env(safe-area-inset-top); }
+body.app-mobile .mobile-nav { padding-bottom: env(safe-area-inset-bottom); }
+body.app-mobile .main { padding-bottom: calc(7.5rem + env(safe-area-inset-bottom)); }
+.week-strip { display:grid; grid-template-columns:repeat(7,1fr); gap:.3rem; overflow:visible; }
+.week-strip .week-day { min-width:0; width:auto; }
+body.app-mobile .view-header .btn-primary { display:none; }

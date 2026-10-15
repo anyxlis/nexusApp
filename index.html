@@ -3,15 +3,24 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a10" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Nexus" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <title>Nexus — Agenda & Finanzas</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
-  <link rel="stylesheet" href="styles.css" />
+  <script src="locale-es-co.js"></script>
+  <link rel="stylesheet" href="styles.css?v=5" />
+  <link rel="stylesheet" href="theme.css?v=4" />
 </head>
 
-<body ng-controller="MainCtrl">
+<body ng-controller="MainCtrl" ng-class="{'app-mobile': mobileApp}">
 
   <!-- SPLASH -->
   <div class="splash" ng-show="appLoading">
@@ -72,7 +81,7 @@
         <img src="logoNexusApp.png" alt="NexusApp" style="width:140px;height:auto;object-fit:contain;" />
       </div>
       <nav class="nav">
-        <button class="nav-item" ng-class="{'active': activeView==='dashboard'}" ng-click="setView('dashboard')">
+        <button class="nav-item" ng-hide="mobileApp" ng-class="{'active': activeView==='dashboard'}" ng-click="setView('dashboard')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
           <span>Dashboard</span>
         </button>
@@ -80,11 +89,11 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
           <span>Agenda</span>
         </button>
-        <button class="nav-item" ng-class="{'active': activeView==='semana'}" ng-click="setView('semana')">
+        <button class="nav-item" ng-hide="mobileApp" ng-class="{'active': activeView==='semana'}" ng-click="setView('semana')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M12 2v4M16 2v4"/></svg>
           <span>Semana</span>
         </button>
-        <button class="nav-item" ng-class="{'active': activeView==='tareas'}" ng-click="setView('tareas')">
+        <button class="nav-item" ng-hide="mobileApp" ng-class="{'active': activeView==='tareas'}" ng-click="setView('tareas')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
           <span>Tareas</span>
         </button>
@@ -93,11 +102,11 @@
           <span>Finanzas</span>
         </button>
         <div class="nav-sep"></div>
-        <button class="nav-item" ng-class="{'active': activeView==='negocio'}" ng-click="setView('negocio')">
+        <button class="nav-item" ng-hide="mobileApp" ng-class="{'active': activeView==='negocio'}" ng-click="setView('negocio')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
           <span>Fragancias</span>
         </button>
-        <button class="nav-item" ng-class="{'active': activeView==='mayoristas'}" ng-click="setView('mayoristas')">
+        <button class="nav-item" ng-hide="mobileApp" ng-class="{'active': activeView==='mayoristas'}" ng-click="setView('mayoristas')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           <span>Mayoristas</span>
         </button>
@@ -117,7 +126,7 @@
     </aside>
 
     <main class="main">
-      <div class="toast" ng-show="toast.show" ng-class="'toast-'+toast.type">{{toast.msg}}</div>
+      <div class="toast" ng-show="toast.show" ng-class="'toast-'+toast.type"><span>{{toast.msg}}</span><button class="toast-undo" ng-if="toast.undo" ng-click="toast.undo(); toast.show=false">Deshacer</button></div>
 
       <!-- DASHBOARD -->
       <section ng-show="activeView==='dashboard'" class="view-section">
@@ -127,9 +136,17 @@
             <p class="subtitle">{{today | date:'EEEE, d'}} de {{today | date:'MMMM yyyy'}}</p>
           </div>
         </header>
-        <div class="dash-quote">
-          <span class="dash-quote-icon">💡</span>
-          <p>{{motivationalQuote}}</p>
+        <div class="dash-hero">
+          <div>
+            <p class="dh-eyebrow">{{greeting()}}</p>
+            <p class="dh-brief">{{dayBrief()}}</p>
+          </div>
+          <div class="dh-actions">
+            <button class="chip" ng-click="openEventModal(null)">＋ Evento</button>
+            <button class="chip" ng-click="goNewTask()">＋ Tarea</button>
+            <button class="chip" ng-click="openTransModal('gasto')">＋ Gasto</button>
+            <button class="chip" ng-click="openTransModal('ingreso')">＋ Ingreso</button>
+          </div>
         </div>
         <div class="dash-stats">
           <div class="dash-stat-card">
@@ -157,6 +174,21 @@
             <div><p class="dsc-num">{{cobrosHoy().length}}</p><p class="dsc-lbl">Cobros hoy</p></div>
           </div>
         </div>
+        <div class="dash-panel dash-week">
+          <div class="dash-panel-header">
+            <span>Mi semana · <b class="dw-total">{{fmtH(weekHours())}}</b></span>
+            <button class="btn-ghost" style="font-size:.75rem;padding:.3rem .7rem" ng-click="setView('semana')">Planificar semana →</button>
+          </div>
+          <div class="dw-days">
+            <button class="dw-day" ng-repeat="d in weekDays" ng-class="{'is-today': isSameDay(d.date, today)}" ng-click="selectDate(d.date); setView('agenda')">
+              <span class="dw-name">{{d.date | date:'EEE'}}</span>
+              <span class="dw-num">{{d.date | date:'d'}}</span>
+              <span class="dw-bar"><i ng-style="{'height': barPct(d.iso)+'%'}" ng-class="'load-'+dayLoad(d.iso)"></i></span>
+              <span class="dw-h">{{dayHours(d.iso) ? fmtH(dayHours(d.iso)) : '—'}}</span>
+            </button>
+          </div>
+          <p class="dw-alert" ng-if="heavyDays().length">⚠️ {{heavyDays().length}} día(s) con más de 8 h programadas. Mueve algo para descansar.</p>
+        </div>
         <div class="dash-cols">
           <div class="dash-panel">
             <div class="dash-panel-header">
@@ -178,6 +210,7 @@
             <div class="dash-task-item" ng-repeat="t in urgentTasks() | limitTo:5">
               <button class="task-check" ng-click="toggleTask(t)" style="flex-shrink:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11"><path d="M20 6L9 17l-5-5"/></svg></button>
               <span class="dash-task-text" ng-class="{'done-txt': t.completada}">{{t.texto}}</span>
+              <span class="task-date" ng-class="{'overdue': taskOverdue(t)}" ng-if="t.fecha_limite">{{taskDueLabel(t) || (t.fecha_limite | date:'d MMM')}}</span>
               <span class="task-pri pri-{{t.prioridad}}">{{t.prioridad}}</span>
             </div>
           </div>
@@ -247,7 +280,7 @@
       <section ng-show="activeView==='agenda'" class="view-section">
         <header class="view-header">
           <div>
-            <h1>Agenda</h1>
+            <h1>{{mobileApp ? 'Mi semana' : 'Agenda'}}</h1>
             <p class="subtitle">{{selectedDate | date:'EEEE, d'}} de {{selectedDate | date:'MMMM yyyy'}}</p>
           </div>
           <button class="btn-primary" ng-click="openEventModal(null)">
@@ -255,16 +288,31 @@
             Nuevo evento
           </button>
         </header>
-        <button class="btn-semana-mobile" ng-click="setView('semana')">
+        <button class="btn-semana-mobile" ng-hide="mobileApp" ng-click="setView('semana')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="15" height="15"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M12 2v4M16 2v4"/></svg>
           Ver vista semanal →
         </button>
+        <div class="agenda-weeknav">
+          <button class="mn-btn" ng-click="prevWeek()" aria-label="Semana anterior">‹</button>
+          <span>{{weekDays[0].date | date:'d MMM'}} – {{weekDays[6].date | date:'d MMM'}}</span>
+          <button class="mn-btn" ng-click="nextWeek()" aria-label="Semana siguiente">›</button>
+          <button class="btn-ghost" ng-if="weekOffset!==0" ng-click="goToday()">Hoy</button>
+        </div>
         <div class="week-strip">
           <button class="week-day" ng-repeat="d in weekDays" ng-class="{'selected': isSameDay(d.date, selectedDate), 'today': isSameDay(d.date, today)}" ng-click="selectDate(d.date)">
             <span class="wd-name">{{d.date | date:'EEE'}}</span>
             <span class="wd-num">{{d.date | date:'d'}}</span>
             <span class="wd-dot" ng-if="hasEventsOn(d.date)"></span>
           </button>
+        </div>
+        <div class="week-load agenda-load">
+          <div class="wl-main"><strong>{{fmtH(weekHours())}}</strong><span>esta semana</span></div>
+          <div class="wl-cats"><span class="wl-chip" ng-repeat="c in weekByCat()"><i ng-style="{'background': c.color}"></i>{{c.label}} {{fmtH(c.h)}}</span></div>
+          <p class="dw-alert" ng-if="heavyDays().length">⚠️ Hay días con más de 8 h.</p>
+        </div>
+        <div class="week-tools">
+          <button class="btn-ghost" ng-click="copyPrevWeek()">⟲ Copiar semana anterior</button>
+          <button class="btn-ghost" ng-click="repeatToNextWeek()">Repetir en la siguiente →</button>
         </div>
         <div class="loading-row" ng-show="loadingEvents"><div class="spinner"></div><span>Cargando…</span></div>
         <div class="timeline" ng-show="!loadingEvents">
@@ -303,6 +351,17 @@
             <button class="btn-primary" ng-click="openEventModal(null)">+ Evento</button>
           </div>
         </header>
+        <div class="week-tools">
+          <button class="btn-ghost" ng-click="copyPrevWeek()" title="Trae los eventos de la semana anterior a esta">⟲ Copiar semana anterior aquí</button>
+          <button class="btn-ghost" ng-click="repeatToNextWeek()" title="Duplica esta semana en la siguiente">Repetir esta semana en la siguiente →</button>
+        </div>
+        <div class="week-load">
+          <div class="wl-main"><strong>{{fmtH(weekHours())}}</strong><span>programadas</span></div>
+          <div class="wl-cats">
+            <span class="wl-chip" ng-repeat="c in weekByCat()"><i ng-style="{'background': c.color}"></i>{{c.label}} {{fmtH(c.h)}}</span>
+          </div>
+          <p class="dw-alert" ng-if="heavyDays().length">⚠️ Hay días con más de 8 h. Considera mover o quitar algo.</p>
+        </div>
         <div class="cat-legend">
           <span class="legend-item" ng-repeat="(k,v) in categories">
             <span class="legend-dot" ng-style="{'background': v.color}"></span>{{v.label}}
@@ -319,9 +378,11 @@
               <div class="wg-day-header" ng-click="selectDate(d.date); setView('agenda')">
                 <span class="wgdh-name">{{d.date | date:'EEE'}}</span>
                 <span class="wgdh-num" ng-class="{'wgdh-today': isSameDay(d.date, today)}">{{d.date | date:'d'}}</span>
+                <span class="wgdh-load" ng-class="'load-'+dayLoad(d.iso)" ng-if="dayHours(d.iso) > 0">{{fmtH(dayHours(d.iso))}}</span>
               </div>
               <div class="wg-body" ng-style="{'height': gridHours.length * cellH + 'px'}" ng-click="clickCell(d.date, $event)">
                 <div class="wg-hline" ng-repeat="h in gridHours" ng-style="{'top': $index * cellH + 'px'}"></div>
+                <div class="wg-now" ng-if="isSameDay(d.date, today) && nowTop() >= 0" ng-style="{'top': nowTop() + 'px'}"></div>
                 <div class="wg-block" ng-repeat="ev in eventsForDay(d.date)" ng-style="blockStyle(ev)" ng-class="'cat-block-'+ev.categoria" ng-click="openEventModal(ev); $event.stopPropagation()" title="{{ev.titulo}}">
                   <span class="wg-block-title">{{ev.titulo}}</span>
                   <span class="wg-block-time">{{formatHour(ev.hora_inicio)}}</span>
@@ -342,30 +403,38 @@
         </header>
         <div class="loading-row" ng-show="loadingTasks"><div class="spinner"></div><span>Cargando tareas…</span></div>
         <div ng-show="!loadingTasks">
-          <div class="filter-tabs" style="margin-bottom:1.2rem">
-            <button ng-class="{'active': taskFilter==='todas'}" ng-click="taskFilter='todas'">Todas</button>
-            <button ng-class="{'active': taskFilter==='pendientes'}" ng-click="taskFilter='pendientes'">Pendientes</button>
-            <button ng-class="{'active': taskFilter==='hechas'}" ng-click="taskFilter='hechas'">Completadas</button>
-          </div>
-          <div class="task-list">
-            <div class="task-empty" ng-if="filteredTasks().length === 0"><p>Sin tareas aquí todavía.</p></div>
-            <div class="task-item" ng-repeat="t in filteredTasks() | orderBy:['-completada','creado_en']" ng-class="{'done': t.completada}">
-              <button class="task-check" ng-click="toggleTask(t)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><path d="M20 6L9 17l-5-5"/></svg></button>
-              <span class="task-text">{{t.texto}}</span>
-              <span class="task-date" ng-if="t.fecha_limite">{{t.fecha_limite | date:'d MMM'}}</span>
-              <span class="task-pri" ng-class="'pri-'+t.prioridad">{{t.prioridad}}</span>
-              <button class="task-del" ng-click="openTaskModal(t)" title="Editar" style="opacity:1;color:var(--text3)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-              <button class="task-del" ng-click="deleteTask(t)" title="Eliminar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>
+          <div class="task-quick">
+            <input type="text" placeholder="Nueva tarea… y Enter" ng-model="newTask.texto" ng-keypress="addTaskEnter($event)" class="task-input" />
+            <div class="task-quick-opts">
+              <div class="chip-group">
+                <button class="chip" ng-class="{'on': newTask.fecha_limite===quickDate(0)}" ng-click="newTask.fecha_limite = (newTask.fecha_limite===quickDate(0) ? '' : quickDate(0))">Hoy</button>
+                <button class="chip" ng-class="{'on': newTask.fecha_limite===quickDate(1)}" ng-click="newTask.fecha_limite = (newTask.fecha_limite===quickDate(1) ? '' : quickDate(1))">Mañana</button>
+                <input str-val type="date" ng-model="newTask.fecha_limite" class="chip-date" />
+              </div>
+              <div class="chip-group">
+                <button class="chip pri-alta" ng-class="{'on': newTask.prioridad==='alta'}" ng-click="newTask.prioridad='alta'">Alta</button>
+                <button class="chip pri-media" ng-class="{'on': newTask.prioridad==='media'}" ng-click="newTask.prioridad='media'">Media</button>
+                <button class="chip pri-baja" ng-class="{'on': newTask.prioridad==='baja'}" ng-click="newTask.prioridad='baja'">Baja</button>
+              </div>
+              <button class="btn-primary" ng-click="addTask()" ng-disabled="!newTask.texto">Añadir</button>
             </div>
-            <div class="add-task-row">
-              <input type="text" placeholder="Nueva tarea…" ng-model="newTask.texto" ng-keypress="addTaskEnter($event)" class="task-input" />
-              <select ng-model="newTask.prioridad" class="task-select">
-                <option value="alta">Alta</option>
-                <option value="media">Media</option>
-                <option value="baja">Baja</option>
-              </select>
-              <input type="date" ng-model="newTask.fecha_limite" class="task-select" style="width:140px" />
-              <button class="btn-ghost" ng-click="addTask()" ng-disabled="!newTask.texto">Añadir</button>
+          </div>
+          <div class="filter-tabs" style="margin-bottom:1.2rem">
+            <button ng-class="{'active': taskFilter==='todas'}" ng-click="setTaskFilter('todas')">Todas</button>
+            <button ng-class="{'active': taskFilter==='pendientes'}" ng-click="setTaskFilter('pendientes')">Pendientes</button>
+            <button ng-class="{'active': taskFilter==='hechas'}" ng-click="setTaskFilter('hechas')">Completadas</button>
+          </div>
+          <div class="task-empty" ng-if="taskGroupsList.length === 0"><p>Todo al día ✨ Añade tu primera tarea arriba.</p></div>
+          <div class="task-group" ng-repeat="g in taskGroupsList track by g.key">
+            <div class="task-group-head" ng-class="'tg-'+g.key"><span>{{g.label}}</span><b>{{g.total || g.items.length}}</b></div>
+            <div class="task-list">
+              <div class="task-item" ng-repeat="t in g.items track by t.id" ng-class="{'done': t.completada}">
+                <button class="task-check" ng-click="toggleTask(t)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><path d="M20 6L9 17l-5-5"/></svg></button>
+                <span class="task-text" ng-click="openTaskModal(t)">{{t.texto}}</span>
+                <span class="task-date" ng-class="{'overdue': taskOverdue(t)}" ng-if="t.fecha_limite">{{taskDueLabel(t) || (t.fecha_limite | date:'d MMM')}}</span>
+                <span class="task-pri" ng-class="'pri-'+t.prioridad">{{t.prioridad}}</span>
+                <button class="task-del" ng-click="deleteTask(t)" title="Eliminar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>
+              </div>
             </div>
           </div>
         </div>
@@ -376,17 +445,27 @@
         <header class="view-header">
           <div>
             <h1>Finanzas</h1>
-            <p class="subtitle">Control de ingresos y gastos del mes</p>
+            <p class="subtitle">Tus movimientos se guardan por mes y nunca se borran solos</p>
           </div>
           <div class="header-actions">
             <button class="btn-income" ng-click="openTransModal('ingreso')">+ Ingreso</button>
             <button class="btn-expense" ng-click="openTransModal('gasto')">+ Gasto</button>
-            <button class="btn-cerrar-mes" ng-click="openCerrarMesModal()">
+            <button class="btn-cerrar-mes" ng-click="exportCSV()" title="Descarga todos tus movimientos en un archivo para Excel">⬇ Respaldo</button>
+            <button class="btn-cerrar-mes" ng-click="openCerrarMesModal()" title="Guarda una copia del resumen de este mes (no borra nada)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="14" height="14"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-              Cerrar mes
+              Guardar resumen
             </button>
           </div>
         </header>
+        <div class="month-nav">
+          <button class="mn-btn" ng-click="shiftMonth(-1)" aria-label="Mes anterior">‹</button>
+          <div class="mn-label">
+            <strong>{{finMonthLabel()}}</strong>
+            <small>{{monthTrans().length}} movimientos<span ng-if="expenseDelta() !== null"> · gastos {{expenseDelta() > 0 ? '+' : ''}}{{expenseDelta()}}% vs mes anterior</span></small>
+          </div>
+          <button class="mn-btn" ng-click="shiftMonth(1)" aria-label="Mes siguiente">›</button>
+          <button class="btn-ghost" ng-if="!isCurrentMonth()" ng-click="goCurrentMonth()">Mes actual</button>
+        </div>
         <div class="loading-row" ng-show="loadingTrans"><div class="spinner"></div><span>Cargando…</span></div>
         <div ng-show="!loadingTrans">
 
@@ -461,7 +540,7 @@
                 <div style="font-size:2.5rem;margin-bottom:.75rem">📦</div>
                 <p style="font-weight:600;margin-bottom:.35rem">Sin meses cerrados aún</p>
                 <p style="font-size:.8rem;color:var(--text3);line-height:1.5">Cuando cierres un mes quedará guardado aquí con todas sus transacciones para que puedas revisarlo cuando quieras.</p>
-                <button class="btn-ghost" style="margin-top:1rem" ng-click="openCerrarMesModal()">Cerrar mes actual →</button>
+                <button class="btn-ghost" style="margin-top:1rem" ng-click="openCerrarMesModal()">Guardar resumen del mes →</button>
               </div>
               <div ng-if="historialMeses.length > 0">
                 <p style="font-size:.75rem;color:var(--text3);margin-bottom:1rem">{{historialMeses.length}} mes(es) guardado(s) · Haz clic para ver el detalle</p>
@@ -518,9 +597,42 @@
             <div class="neg-kpi"><span class="neg-kpi-ico">💰</span><div><p class="kpi-label">Total vendido</p><p class="kpi-value" style="color:var(--green)">${{totalVendido() | number}}</p></div></div>
             <div class="neg-kpi"><span class="neg-kpi-ico">✅</span><div><p class="kpi-label">Total recibido</p><p class="kpi-value" style="color:var(--blue)">${{totalRecibido() | number}}</p></div></div>
             <div class="neg-kpi"><span class="neg-kpi-ico">⏳</span><div><p class="kpi-label">Por cobrar</p><p class="kpi-value" style="color:var(--red)">${{totalPorCobrar() | number}}</p></div></div>
-            <div class="neg-kpi"><span class="neg-kpi-ico">📦</span><div><p class="kpi-label">Fragancias</p><p class="kpi-value" style="color:var(--accent2)">{{fragancias.length}}</p></div></div>
+            <div class="neg-kpi"><span class="neg-kpi-ico">📅</span><div><p class="kpi-label">Vendido este mes</p><p class="kpi-value" style="color:var(--accent2)">${{ventasDelMes() | number}}</p></div></div>
           </div>
-          <div class="neg-panel-row">
+          <div class="neg-kpi-row">
+            <div class="neg-kpi"><span class="neg-kpi-ico">🧪</span><div><p class="kpi-label">Inversión (materiales)</p><p class="kpi-value" style="color:var(--amber)">${{totalInversionMat() | number}}</p></div></div>
+            <div class="neg-kpi"><span class="neg-kpi-ico">📈</span><div><p class="kpi-label">Utilidad estimada</p><p class="kpi-value" ng-style="{'color': utilidadEstimada()>=0 ? 'var(--green)' : 'var(--red)'}">${{utilidadEstimada() | number}}</p><p class="kpi-sub">margen {{margenPct()}}%</p></div></div>
+            <div class="neg-kpi"><span class="neg-kpi-ico">🔁</span><div><p class="kpi-label">Inversión recuperada</p><p class="kpi-value" style="color:var(--blue)">{{recuperadoPct()}}%</p><div class="mini-bar"><i ng-style="{'width': recuperadoPct()+'%'}"></i></div></div></div>
+            <div class="neg-kpi"><span class="neg-kpi-ico">📦</span><div><p class="kpi-label">Inventario a precio venta</p><p class="kpi-value" style="color:var(--accent2)">${{valorInventario() | number}}</p></div></div>
+          </div>
+          <p class="neg-hint">Utilidad estimada = ventas − (unidades vendidas × costo promedio por unidad). Costo promedio hoy: ${{costoUnitario() | number}} por unidad.</p>
+          <div class="neg-grid">
+            <div class="neg-panel">
+              <h3 class="neg-panel-title">⏳ Quién me debe</h3>
+              <div class="neg-empty" ng-if="deudores().length===0" style="padding:1rem">Nadie te debe. ¡Todo al día! 🎉</div>
+              <div class="neg-mini-venta" ng-repeat="d in deudores() track by d.cliente">
+                <span class="neg-mv-name">{{d.cliente}}</span>
+                <span class="neg-mv-amt unpaid">${{d.debe | number}}</span>
+              </div>
+              <button class="btn-ghost" style="margin-top:.8rem;font-size:.75rem" ng-if="deudores().length>0" ng-click="negTab='ventas'; ventaFilter='deben'">Ver ventas pendientes →</button>
+            </div>
+            <div class="neg-panel">
+              <h3 class="neg-panel-title">🏆 Más vendidas</h3>
+              <div class="neg-empty" ng-if="masVendidas().length===0" style="padding:1rem">Aún sin datos de ventas</div>
+              <div class="neg-mini-venta" ng-repeat="t in masVendidas() track by t.nombre">
+                <span class="neg-mv-name">{{$index+1}}. {{t.nombre}}</span>
+                <span class="neg-mv-amt paid">{{t.und}} und</span>
+              </div>
+            </div>
+            <div class="neg-panel">
+              <h3 class="neg-panel-title">🔴 Por reponer</h3>
+              <div class="neg-empty" ng-if="stockBajo().length===0" style="padding:1rem">Stock suficiente en todo ✨</div>
+              <div class="neg-mini-venta" ng-repeat="f in stockBajo() | limitTo:6">
+                <span class="neg-mv-name">{{f.nombre}}</span>
+                <span class="neg-mv-amt" ng-class="f.stock<=0?'unpaid':'partial'">{{f.stock<=0 ? 'Agotada' : f.stock+' und'}}</span>
+              </div>
+              <button class="btn-ghost" style="margin-top:.8rem;font-size:.75rem" ng-if="stockBajo().length>0" ng-click="negTab='inventario'; invFilter='poco'">Ir al inventario →</button>
+            </div>
             <div class="neg-panel">
               <h3 class="neg-panel-title">👥 Estado de clientes</h3>
               <div class="neg-client-stat">
@@ -546,6 +658,7 @@
               <button ng-class="{'active':ventaFilter==='pagadas'}" ng-click="ventaFilter='pagadas'">Pagadas</button>
               <button ng-class="{'active':ventaFilter==='deben'}" ng-click="ventaFilter='deben'">Deben</button>
             </div>
+            <input class="search-input" type="search" placeholder="Buscar cliente o fragancia…" ng-model="ventaQ" />
             <button class="btn-primary" ng-click="openVentaModal()">+ Nueva venta</button>
           </div>
           <div class="loading-row" ng-show="loadingVentas"><div class="spinner"></div><span>Cargando…</span></div>
@@ -585,6 +698,7 @@
               <button ng-class="{'active': invFilter==='poco'}" ng-click="invFilter='poco'">🟡 Poco</button>
               <button ng-class="{'active': invFilter==='agotadas'}" ng-click="invFilter='agotadas'">🔴 Agotadas</button>
             </div>
+            <input class="search-input" type="search" placeholder="Buscar fragancia…" ng-model="invQ" />
             <button class="btn-primary" ng-click="openFraganciaModal()" style="white-space:nowrap;flex-shrink:0">+ Fragancia</button>
           </div>
           <div class="loading-row" ng-show="loadingFragancias"><div class="spinner"></div><span>Cargando…</span></div>
@@ -603,7 +717,12 @@
                   <span class="inv-stock" ng-class="f.stock === 0 ? 'low-stock' : (f.stock < 3 ? 'low-stock' : '')">{{f.stock === 0 ? '🔴 Agotado' : (f.stock < 3 ? '🟡 Poco' : '🟢 Disponible')}}</span>
                 </div>
                 <div style="margin-top:.5rem;height:4px;background:var(--bg4);border-radius:99px;overflow:hidden">
-                  <div style="height:100%;border-radius:99px;transition:width .4s" ng-style="{'width': (f.cantidad > 0 ? (f.stock/f.cantidad*100) : 0) + '%','background': f.stock === 0 ? 'var(--red)' : (f.stock < 3 ? 'var(--amber)' : 'var(--green)')}"></div>
+                  <div style="height:100%;border-radius:99px;transition:width .4s" ng-style="{'width': (f.cantidad > 0 ? Math.min(100, f.stock/f.cantidad*100) : 0) + '%','background': f.stock === 0 ? 'var(--red)' : (f.stock < 3 ? 'var(--amber)' : 'var(--green)')}"></div>
+                </div>
+                <div class="stepper">
+                  <button ng-click="adjustStock(f,-1)" ng-disabled="f.stock<=0" aria-label="Quitar una unidad">−</button>
+                  <span><b>{{f.stock}}</b> en stock</span>
+                  <button ng-click="adjustStock(f,1)" aria-label="Añadir una unidad">+</button>
                 </div>
                 <div style="display:flex;gap:4px;margin-top:8px">
                   <button style="flex:1;background:var(--blue-bg);border:none;color:var(--blue);cursor:pointer;font-size:.8rem;padding:.35rem;border-radius:6px" ng-click="openEditFragancia(f)">✎ Editar</button>
@@ -700,6 +819,11 @@
           </div>
         </div>
         <div ng-show="mayTab==='revendedores'">
+          <div class="neg-kpi-row">
+            <div class="neg-kpi"><span class="neg-kpi-ico">🤝</span><div><p class="kpi-label">Revendedores activos</p><p class="kpi-value" style="color:var(--accent2)">{{mayActivos()}}</p></div></div>
+            <div class="neg-kpi"><span class="neg-kpi-ico">💰</span><div><p class="kpi-label">Vendido a mayoristas</p><p class="kpi-value" style="color:var(--green)">${{mayVendidoTotal() | number}}</p></div></div>
+            <div class="neg-kpi"><span class="neg-kpi-ico">⏳</span><div><p class="kpi-label">Me deben</p><p class="kpi-value" style="color:var(--red)">${{mayDebeTotal() | number}}</p></div></div>
+          </div>
           <div style="display:flex;justify-content:flex-end;margin-bottom:1.2rem">
             <button class="btn-primary" ng-click="openMayoristaModal(null)">+ Nuevo revendedor</button>
           </div>
@@ -714,12 +838,34 @@
                   <span class="rev-plan" ng-class="'plan-badge-'+m.plan">{{planLabel(m.plan)}}</span>
                 </div>
                 <div class="rev-stats">
-                  <div class="rs-item"><span>Total pedidos</span><strong>${{m.total_pedidos | number}}</strong></div>
+                  <div class="rs-item"><span>Total pedidos</span><strong>${{mayTotal(m) | number}}</strong></div>
+                  <div class="rs-item"><span>Me debe</span><strong ng-style="{'color': mayDebe(m)>0 ? 'var(--red)' : 'var(--green)'}">${{mayDebe(m) | number}}</strong></div>
                   <div class="rs-item"><span>Estado</span><span class="rev-estado" ng-class="m.estado==='activo'?'est-ok':'est-no'">{{m.estado}}</span></div>
                 </div>
                 <p class="rev-notas" ng-if="m.notas">📝 {{m.notas}}</p>
+                <button class="ped-toggle" ng-click="toggleRev(m)">{{m._open ? '▾' : '▸'}} Pedidos ({{pedidosDe(m).length}}) · {{mayUnidades(m)}} und</button>
+                <div class="ped-list" ng-if="m._open">
+                  <div class="neg-empty" ng-if="pedidosDe(m).length===0" style="padding:.6rem">Sin pedidos todavía</div>
+                  <div class="ped-row" ng-repeat="p in pedidosDe(m) track by p.id">
+                    <div class="ped-main">
+                      <b>{{p.cantidad}} × ${{p.precio_unitario | number}}</b>
+                      <small>{{p.fecha | date:'d MMM yyyy'}}</small>
+                    </div>
+                    <div class="ped-money">
+                      <b>${{pedTotal(p) | number}}</b>
+                      <small ng-class="pedDebe(p)>0 ? 'td-red' : 'td-ok'">{{pedDebe(p)>0 ? 'Debe $'+(pedDebe(p) | number) : '✓ Pagado'}}</small>
+                    </div>
+                    <button class="ped-estado" ng-class="'pe-'+p.estado" ng-click="cyclePedidoEstado(p)" title="Cambiar estado">{{p.estado}}</button>
+                    <div class="ped-actions">
+                      <button ng-if="pedDebe(p)>0" ng-click="pagarPedido(p)" title="Marcar pagado">✓</button>
+                      <button ng-if="pedDebe(p)>0" ng-click="openPedAbono(p)" title="Registrar abono">$</button>
+                      <button ng-click="deletePedido(p)" title="Eliminar">✕</button>
+                    </div>
+                  </div>
+                </div>
                 <div class="rev-actions">
                   <button class="btn-ghost" style="font-size:.75rem;padding:.35rem .7rem" ng-click="openPedidoMayoristaModal(m)">+ Pedido</button>
+                  <a class="btn-ghost wa-btn" ng-if="waCobro(m)" ng-href="{{waCobro(m)}}" target="_blank" rel="noopener">WhatsApp</a>
                   <button class="btn-ghost" style="font-size:.75rem;padding:.35rem .7rem;color:var(--blue)" ng-click="openMayoristaModal(null, m)">✎ Editar</button>
                   <button class="vc-btn-del" ng-click="deleteMayorista(m)">✕</button>
                 </div>
@@ -738,23 +884,54 @@
 
   <!-- MODAL EVENTO RÁPIDO -->
   <div class="overlay" ng-show="showEventModal" ng-click="closeEventModal()"></div>
-  <div class="modal modal-quick" ng-show="showEventModal && !showFullForm">
-    <div class="quick-header">
-      <div class="quick-cat-dots">
-        <button class="qcat-btn" ng-repeat="(k,v) in categories" ng-class="{'qcat-active': newEvent.categoria === k}" ng-style="{'--cc': v.color}" ng-click="newEvent.categoria = k" title="{{v.label}}"></button>
-      </div>
-      <button class="btn-ghost" style="font-size:.75rem;padding:.3rem .6rem" ng-click="showFullForm=true">+ Detalles</button>
+  <div class="modal modal-quick qe" ng-show="showEventModal && !showFullForm">
+    <div class="qe-top">
+      <span class="qe-title-lbl">{{editingEvent ? 'Editar evento' : 'Nuevo evento'}}</span>
+      <button class="btn-ghost" style="font-size:.75rem;padding:.3rem .65rem" ng-click="showFullForm=true">+ Detalles</button>
     </div>
     <input class="quick-title-input" type="text" ng-model="newEvent.titulo" placeholder="¿Qué vas a hacer?" ng-keypress="quickSaveEnter($event)" autofocus />
-    <div class="quick-time-row">
-      <span class="quick-date-lbl">{{newEvent.fecha ? (newEvent.fecha | date:'EEE d MMM') : ''}}</span>
-      <input type="time" ng-model="newEvent.hora_inicio" class="quick-time" />
-      <span class="quick-sep">→</span>
-      <input type="time" ng-model="newEvent.hora_fin" class="quick-time" />
+
+    <div class="qe-cats">
+      <button class="qe-cat" ng-repeat="(k,v) in categories" ng-class="{'on': newEvent.categoria === k}" ng-click="newEvent.categoria = k">
+        <i ng-style="{'background': v.color}"></i>{{v.label}}
+      </button>
     </div>
+
+    <div class="qe-block">
+      <label class="qe-lbl">Cuándo</label>
+      <div class="qe-when">
+        <input str-val type="date" ng-model="newEvent.fecha" class="qe-input qe-date" />
+        <input str-val type="time" ng-model="newEvent.hora_inicio" ng-change="onStartChange()" class="qe-input qe-time" />
+        <span class="qe-arrow">→</span>
+        <input str-val type="time" ng-model="newEvent.hora_fin" ng-change="onEndChange()" class="qe-input qe-time" />
+      </div>
+      <p class="qe-day">{{newEvent.fecha | date:'EEEE d \'de\' MMMM'}}</p>
+      <div class="qe-chips">
+        <button class="chip" ng-repeat="m in [30,60,90,120,180]" ng-class="{'on': durMin()===m}" ng-click="setDur(m)">{{durLabel(m)}}</button>
+      </div>
+    </div>
+
+    <div class="qe-block" ng-if="!editingEvent">
+      <label class="qe-lbl">Repetir</label>
+      <div class="qe-chips">
+        <button class="chip" ng-class="{'on': !newEvent.repetir}" ng-click="newEvent.repetir=''">No</button>
+        <button class="chip" ng-class="{'on': newEvent.repetir==='laboral'}" ng-click="newEvent.repetir='laboral'">Lun–Vie</button>
+        <button class="chip" ng-class="{'on': newEvent.repetir==='diario'}" ng-click="newEvent.repetir='diario'">Todos los días</button>
+        <button class="chip" ng-class="{'on': newEvent.repetir==='semanal'}" ng-click="newEvent.repetir='semanal'">Cada semana</button>
+      </div>
+      <div class="qe-weeks" ng-if="newEvent.repetir">
+        <span>Durante</span>
+        <button class="qe-step" ng-click="stepWeeks(-1)">−</button>
+        <b>{{weeksVal()}}</b>
+        <button class="qe-step" ng-click="stepWeeks(1)">+</button>
+        <span>{{weeksVal()===1 ? 'semana' : 'semanas'}} · se crearán <b>{{repeatCount()}}</b> eventos</span>
+      </div>
+    </div>
+
     <div class="quick-actions">
-      <button class="btn-ghost" ng-click="closeEventModal()">Cancelar</button>
       <button class="btn-danger-sm" ng-show="editingEvent" ng-click="deleteEvent(editingEvent, null); closeEventModal()">Eliminar</button>
+      <span style="flex:1"></span>
+      <button class="btn-ghost" ng-click="closeEventModal()">Cancelar</button>
       <button class="btn-primary" ng-click="saveEvent()" ng-disabled="savingEvent || !newEvent.titulo">{{savingEvent ? '…' : (editingEvent ? 'Actualizar' : 'Guardar')}}</button>
     </div>
   </div>
@@ -765,14 +942,23 @@
     <h2>{{editingEvent ? 'Editar evento' : 'Nuevo evento'}}</h2>
     <div class="form-group"><label>Título *</label><input type="text" ng-model="newEvent.titulo" placeholder="Reunión, clase, cita…" /></div>
     <div class="form-row">
-      <div class="form-group"><label>Fecha</label><input type="date" ng-model="newEvent.fecha" /></div>
+      <div class="form-group"><label>Fecha</label><input str-val type="date" ng-model="newEvent.fecha" /></div>
       <div class="form-group"><label>Categoría</label><select ng-model="newEvent.categoria"><option ng-repeat="(k,v) in categories" value="{{k}}">{{v.label}}</option></select></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>Hora inicio</label><input type="time" ng-model="newEvent.hora_inicio" /></div>
-      <div class="form-group"><label>Hora fin</label><input type="time" ng-model="newEvent.hora_fin" /></div>
+      <div class="form-group"><label>Hora inicio</label><input str-val type="time" ng-model="newEvent.hora_inicio" /></div>
+      <div class="form-group"><label>Hora fin</label><input str-val type="time" ng-model="newEvent.hora_fin" /></div>
     </div>
     <div class="form-group"><label>Descripción</label><textarea ng-model="newEvent.descripcion" placeholder="Detalles opcionales…" rows="2"></textarea></div>
+    <div class="repeat-row" ng-if="!editingEvent">
+      <select ng-model="newEvent.repetir" class="qe-input">
+        <option value="">No se repite</option>
+        <option value="laboral">Lunes a viernes</option>
+        <option value="diario">Todos los días</option>
+        <option value="semanal">Cada semana (mismo día)</option>
+      </select>
+      <span ng-if="newEvent.repetir" class="repeat-weeks">durante <input type="number" min="1" max="26" ng-model="newEvent.repetirSemanas" placeholder="4" class="qe-input" style="width:64px" /> semanas</span>
+    </div>
     <div class="modal-actions">
       <button class="btn-ghost" ng-click="showFullForm=false">← Volver</button>
       <button class="btn-danger-sm" ng-show="editingEvent" ng-click="deleteEvent(editingEvent, null); closeEventModal()">Eliminar</button>
@@ -787,7 +973,7 @@
     <div class="form-group"><label>Descripción *</label><input type="text" ng-model="newTrans.descripcion" placeholder="Ej: Salario, Mercado…" /></div>
     <div class="form-row">
       <div class="form-group"><label>Monto *</label><input type="number" ng-model="newTrans.monto" placeholder="0" min="0" /></div>
-      <div class="form-group"><label>Fecha</label><input type="date" ng-model="newTrans.fecha" /></div>
+      <div class="form-group"><label>Fecha</label><input str-val type="date" ng-model="newTrans.fecha" /></div>
     </div>
     <div class="form-group">
       <label>Categoría</label>
@@ -809,9 +995,9 @@
   <!-- ═══ MODAL CERRAR MES ═══ -->
   <div class="overlay" ng-show="showCerrarMesModal" ng-click="showCerrarMesModal=false"></div>
   <div class="modal" ng-show="showCerrarMesModal" style="width:min(480px,92vw)">
-    <h2>📅 Cerrar mes</h2>
-    <div style="background:var(--amber-bg);border:1px solid rgba(251,191,36,.3);border-radius:var(--radius-sm);padding:.85rem 1rem;margin-bottom:1.2rem;font-size:.84rem;color:var(--amber);line-height:1.55">
-      ⚠️ Esto guardará el resumen del mes actual y <strong>eliminará todas las transacciones</strong> para empezar uno nuevo. No se puede deshacer.
+    <h2>📅 Guardar resumen del mes</h2>
+    <div style="background:var(--green-bg);border:1px solid rgba(52,211,153,.3);border-radius:var(--radius-sm);padding:.85rem 1rem;margin-bottom:1.2rem;font-size:.84rem;color:var(--green);line-height:1.55">
+      ✅ Se guarda una copia del resumen y de las transacciones de este mes. <strong>No se borra nada</strong>: tus movimientos siguen en su mes.
     </div>
     <div class="form-group">
       <label>Nombre del mes</label>
@@ -838,13 +1024,13 @@
           <strong style="font-family:'JetBrains Mono',monospace;color:var(--accent3)">{{savingsRate()}}%</strong>
         </div>
       </div>
-      <div style="margin-top:.65rem;font-size:.75rem;color:var(--text3)">{{transactions.length}} transacciones serán archivadas</div>
+      <div style="margin-top:.65rem;font-size:.75rem;color:var(--text3)">{{monthTrans().length}} transacciones incluidas en la copia</div>
     </div>
     <div class="modal-actions">
       <button class="btn-ghost" ng-click="showCerrarMesModal=false">Cancelar</button>
       <button class="btn-primary" ng-click="cerrarMes()" ng-disabled="!cerrarMesLabel || savingCierre"
               style="background:linear-gradient(135deg,#92400e,#d97706)">
-        {{savingCierre ? 'Guardando…' : 'Guardar y reiniciar mes →'}}
+        {{savingCierre ? 'Guardando…' : 'Guardar resumen →'}}
       </button>
     </div>
   </div>
@@ -912,10 +1098,10 @@
       <div class="form-group"><label>Abono recibido</label><input type="number" ng-model="newVenta.abono" placeholder="0" /></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>Fecha</label><input type="date" ng-model="newVenta.fecha" /></div>
+      <div class="form-group"><label>Fecha</label><input str-val type="date" ng-model="newVenta.fecha" /></div>
       <div class="form-group"><label>¿Ya pagó completo?</label><select ng-model="newVenta.ya_pago"><option value="false">No</option><option value="true">Sí</option></select></div>
     </div>
-    <div class="form-group" ng-if="newVenta.ya_pago==='false'"><label>Fecha de cobro</label><input type="date" ng-model="newVenta.fecha_cobro" /></div>
+    <div class="form-group" ng-if="newVenta.ya_pago==='false'"><label>Fecha de cobro</label><input str-val type="date" ng-model="newVenta.fecha_cobro" /></div>
     <div ng-if="stockInsuficiente()" style="background:var(--red-bg);border:1px solid rgba(240,98,146,.3);border-radius:var(--radius-xs);padding:.6rem .9rem;font-size:.8rem;color:var(--red);margin-bottom:.75rem">⚠️ Una o más fragancias no tienen stock suficiente.</div>
     <div class="modal-actions">
       <button class="btn-ghost" ng-click="closeVentaModal()">Cancelar</button>
@@ -964,7 +1150,7 @@
     </div>
     <div class="form-row">
       <div class="form-group"><label>Abono</label><input type="number" ng-model="newPedidoMay.abono" placeholder="0" /></div>
-      <div class="form-group"><label>Fecha</label><input type="date" ng-model="newPedidoMay.fecha" /></div>
+      <div class="form-group"><label>Fecha</label><input str-val type="date" ng-model="newPedidoMay.fecha" /></div>
     </div>
     <div class="form-group"><label>Estado</label><select ng-model="newPedidoMay.estado"><option value="pendiente">Pendiente</option><option value="enviado">Enviado</option><option value="entregado">Entregado</option></select></div>
     <p style="color:var(--accent2);font-family:'JetBrains Mono',monospace;font-size:1.1rem;margin:.5rem 0" ng-if="newPedidoMay.cantidad && newPedidoMay.precio_unitario">Total: ${{(newPedidoMay.cantidad * newPedidoMay.precio_unitario) | number}}</p>
@@ -1006,7 +1192,7 @@
     <div class="form-group"><label>Texto *</label><input type="text" ng-model="editTask.texto" placeholder="Descripción de la tarea" /></div>
     <div class="form-row">
       <div class="form-group"><label>Prioridad</label><select ng-model="editTask.prioridad"><option value="alta">Alta</option><option value="media">Media</option><option value="baja">Baja</option></select></div>
-      <div class="form-group"><label>Fecha límite</label><input type="date" ng-model="editTask.fecha_limite" /></div>
+      <div class="form-group"><label>Fecha límite</label><input str-val type="date" ng-model="editTask.fecha_limite" /></div>
     </div>
     <div class="modal-actions">
       <button class="btn-ghost" ng-click="showTaskModal=false">Cancelar</button>
@@ -1046,7 +1232,7 @@
       <div class="form-group"><label>Fecha</label><input type="text" ng-model="editVentaData.fecha" placeholder="YYYY-MM-DD" pattern="\d{4}-\d{2}-\d{2}" onfocus="this.type='date'" onblur="this.type=this.value?'date':'text'" /></div>
       <div class="form-group"><label>¿Ya pagó?</label><select ng-model="editVentaData.ya_pago"><option value="false">No</option><option value="true">Sí</option></select></div>
     </div>
-    <div class="form-group" ng-if="editVentaData.ya_pago==='false'"><label>Fecha de cobro</label><input type="date" ng-model="editVentaData.fecha_cobro" /></div>
+    <div class="form-group" ng-if="editVentaData.ya_pago==='false'"><label>Fecha de cobro</label><input str-val type="date" ng-model="editVentaData.fecha_cobro" /></div>
     <div class="modal-actions">
       <button class="btn-ghost" ng-click="showEditVentaModal=false">Cancelar</button>
       <button class="btn-primary" ng-click="saveEditVenta()">Guardar cambios</button>
@@ -1091,17 +1277,31 @@
     </div>
   </div>
 
+  <!-- MODAL ABONO PEDIDO MAYORISTA -->
+  <div class="overlay" ng-show="showPedAbonoModal" ng-click="showPedAbonoModal=false"></div>
+  <div class="modal" ng-show="showPedAbonoModal" style="width:min(380px,90vw)">
+    <h2>Registrar abono</h2>
+    <p style="color:var(--text2);font-size:.85rem;margin-bottom:.8rem" ng-if="pedAbono.p">Debe ${{pedDebe(pedAbono.p) | number}}</p>
+    <div class="form-group"><label>Monto del abono</label><input type="number" ng-model="pedAbono.monto" min="0" placeholder="0" /></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" ng-click="showPedAbonoModal=false">Cancelar</button>
+      <button class="btn-primary" ng-click="savePedAbono()" ng-disabled="!(pedAbono.monto>0)">Guardar abono</button>
+    </div>
+  </div>
+
+  <button class="fab" ng-show="currentUser && fabVisible()" ng-click="fabAction()" aria-label="Añadir">＋</button>
+
   <!-- BOTTOM NAV MÓVIL -->
   <nav class="mobile-nav" ng-show="currentUser">
-    <button class="mobile-nav-item" ng-class="{'active':activeView==='dashboard'}" ng-click="setView('dashboard')">
+    <button class="mobile-nav-item" ng-hide="mobileApp" ng-class="{'active':activeView==='dashboard'}" ng-click="setView('dashboard')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
       <span>Inicio</span>
     </button>
     <button class="mobile-nav-item" ng-class="{'active':activeView==='agenda'||activeView==='semana'}" ng-click="setView('agenda')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-      <span>Agenda</span>
+      <span>{{mobileApp ? 'Semana' : 'Agenda'}}</span>
     </button>
-    <button class="mobile-nav-item" ng-class="{'active':activeView==='tareas'}" ng-click="setView('tareas')">
+    <button class="mobile-nav-item" ng-hide="mobileApp" ng-class="{'active':activeView==='tareas'}" ng-click="setView('tareas')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
       <span>Tareas</span>
     </button>
@@ -1109,17 +1309,9 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
       <span>Finanzas</span>
     </button>
-    <button class="mobile-nav-item" ng-class="{'active':activeView==='negocio'}" ng-click="setView('negocio')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
-      <span>Negocio</span>
-    </button>
-    <button class="mobile-nav-item" ng-class="{'active':activeView==='mayoristas'}" ng-click="setView('mayoristas')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      <span>Mayoristas</span>
-    </button>
     <button class="mobile-nav-item" ng-click="showMobileProfile=!showMobileProfile">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="20" height="20"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-      <span>Perfil</span>
+      <span>{{mobileApp ? 'Cuenta' : 'Más'}}</span>
     </button>
   </nav>
 
@@ -1131,13 +1323,21 @@
       <div><p class="mpp-name">{{currentUser.nombre}}</p><p class="mpp-handle">@{{currentUser.username}}</p></div>
     </div>
     <div class="mpp-divider"></div>
+    <button class="mpp-item" ng-hide="mobileApp" ng-click="setView('negocio'); showMobileProfile=false">🌸 Fragancias</button>
+    <button class="mpp-item" ng-hide="mobileApp" ng-click="setView('mayoristas'); showMobileProfile=false">🤝 Mayoristas</button>
+    <div class="mpp-divider" ng-hide="mobileApp"></div>
     <button class="mpp-item mpp-logout" ng-click="logout(); showMobileProfile=false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
       Cerrar sesión
     </button>
   </div>
 
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=9"></script>
+  <script>
+    if ('serviceWorker' in navigator && /^https?:/.test(location.protocol)) {
+      window.addEventListener('load', function() { navigator.serviceWorker.register('sw.js').catch(function() {}); });
+    }
+  </script>
   <script>
     var starsContainer = document.getElementById('authStars');
     if (starsContainer) {
